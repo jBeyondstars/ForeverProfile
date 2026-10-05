@@ -1,4 +1,6 @@
-![ForeverProfiles](https://raw.githubusercontent.com/jBeyondstars/ForeverProfile/main/Media/Logo-Wordmark-Dark.png)
+<p align="center">
+  <img src="https://raw.githubusercontent.com/jBeyondstars/ForeverProfile/main/Media/Logo-Wordmark-Dark.png" alt="ForeverProfiles" width="900">
+</p>
 
 # ForeverProfiles
 
