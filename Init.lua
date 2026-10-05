@@ -1,6 +1,6 @@
 local _, F = ...
 
-F.version = "0.1.2"
+F.version = "0.1.3"
 local fr = {
     ["Profiles"] = "Profils",
     ["Graphics"] = "Graphismes",
@@ -106,6 +106,8 @@ local fr = {
     ["Selecting a profile does not apply it."] = "La sélection d’un profil ne l’applique pas.",
     ["Return to the settings captured just before your last profile application."] = "Reviens aux réglages capturés juste avant la dernière application d’un profil.",
     ["Show favorite quick bar"] = "Afficher la barre de favoris",
+    ["Lock favorite bar"] = "Verrouiller la barre",
+    ["Keep the bar in place and hide its drag handle."] = "Garde la barre en place et masque sa poignée de déplacement.",
     ["Apply a favorite profile in one click. Drag the FP handle to move the bar."] = "Applique un favori en un clic. Fais glisser la poignée FP pour déplacer la barre.",
     ["Your first profile"] = "Ton premier profil",
     ["Remove favorite"] = "Retirer le favori",

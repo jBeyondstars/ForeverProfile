@@ -20,6 +20,7 @@ La sélection d’un profil sert à le consulter. Seul le bouton d’application
 - Configuration générale, configuration raid/champ de bataille et activation du mode raid distinct sauvegardées ensemble, lorsque ces options sont exposées par le client.
 - Échelle de rendu, anticrénelage, synchronisation verticale et limites de FPS accessibles sur le client.
 - Barre déplaçable de **3 favoris** : fais glisser sa poignée ou son fond pour la déplacer. Le bouton **FP** ouvre la fenêtre principale.
+- Case **Verrouiller la barre** dans `/fp` : fixe la position et masque la poignée de déplacement. Les boutons restent utilisables. Décoche-la pour déplacer à nouveau la barre ; le verrouillage est conservé entre les sessions.
 - Taille de la barre réglable de **60 à 180 %** dans la fenêtre principale, ou avec la molette sur la poignée. Boutons et texte changent de taille ensemble. Position et taille sont conservées entre les sessions.
 - **Restaurer les réglages précédents** revient à l’état capturé avant la dernière bascule. Cette sauvegarde temporaire reste disponible pendant la session ; `/reload` ou un redémarrage l’efface.
 - États **Actif**, **Modifié**, **Appliqué partiellement** calculés à partir des valeurs actuelles. Après un échec partiel, les écarts sont affichés dans le profil, avec leur cause en infobulle.

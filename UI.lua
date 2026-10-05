@@ -540,7 +540,7 @@ function U.Initialize()
     U.quickCheck = CreateFrame("CheckButton", nil, window, "UICheckButtonTemplate")
     U.quickCheck:SetSize(26, 26)
     U.quickCheck:SetPoint("BOTTOMLEFT", 363, 88)
-    U.quickCheck.label = Text(window, 12, color.text, 350, 28)
+    U.quickCheck.label = Text(window, 12, color.text, 168, 28)
     U.quickCheck.label:SetPoint("LEFT", U.quickCheck, "RIGHT", 5, 0)
     U.quickCheck.label:SetJustifyV("MIDDLE")
     U.quickCheck.label:SetText(L["Show favorite quick bar"])
@@ -549,6 +549,18 @@ function U.Initialize()
         Tooltip(self, L["Show favorite quick bar"], L["Apply a favorite profile in one click. Drag the dotted handle to move the bar."])
     end)
     U.quickCheck:SetScript("OnLeave", HideTooltip)
+    U.quickLock = CreateFrame("CheckButton", nil, window, "UICheckButtonTemplate")
+    U.quickLock:SetSize(26, 26)
+    U.quickLock:SetPoint("BOTTOMLEFT", 570, 88)
+    U.quickLock.label = Text(window, 12, color.text, 161, 28)
+    U.quickLock.label:SetPoint("LEFT", U.quickLock, "RIGHT", 5, 0)
+    U.quickLock.label:SetJustifyV("MIDDLE")
+    U.quickLock.label:SetText(L["Lock favorite bar"])
+    U.quickLock:SetScript("OnClick", function(self) F.SetQuickBarLocked(self:GetChecked() and true or false) end)
+    U.quickLock:SetScript("OnEnter", function(self)
+        Tooltip(self, L["Lock favorite bar"], L["Keep the bar in place and hide its drag handle."])
+    end)
+    U.quickLock:SetScript("OnLeave", HideTooltip)
     U.quickScaleLabel = Text(window, 11, color.muted, 141, 20)
     U.quickScaleLabel:SetPoint("BOTTOMLEFT", 363, 60)
     U.quickScaleLabel:SetJustifyV("MIDDLE")
@@ -665,6 +677,7 @@ function U.Refresh()
     RefreshSummary(profile)
     local db = DB()
     U.quickCheck:SetChecked(db.ui and db.ui.quickBarVisible or false)
+    U.quickLock:SetChecked(db.ui and db.ui.quickBarLocked or false)
     local barScale = db.ui and db.ui.quickBarScale or 1
     U.refreshingScale = true
     U.quickScale:SetValue(barScale * 100)
@@ -695,11 +708,14 @@ local function CreateQuickBar()
     Fill(bar, color.background)
     Position(bar, "quickBarPosition", "TOP", "TOP", 0, -125)
     local function StartDrag()
+        local db = DB()
+        if db and db.ui.quickBarLocked then return end
         HideTooltip()
         bar.moving = true
         bar:StartMoving()
     end
     local function StopDrag()
+        if not bar.moving then return end
         SavePosition(bar, "quickBarPosition")
         bar.moving = nil
     end
@@ -735,6 +751,7 @@ local function CreateQuickBar()
     end)
     bar.grip:SetScript("OnMouseWheel", function(_, delta)
         local db = DB()
+        if db and db.ui.quickBarLocked then return end
         local scale = db and db.ui and db.ui.quickBarScale or 1
         F.SetQuickBarScale(math.max(0.6, math.min(1.8, scale + delta * 0.1)))
     end)
@@ -767,9 +784,23 @@ function U.RefreshQuickBar()
         return
     end
     local bar = U.quickBar or CreateQuickBar()
+    local locked = db.ui.quickBarLocked == true
+    if locked and bar.moving then
+        SavePosition(bar, "quickBarPosition")
+        bar.moving = nil
+    end
+    bar:SetMovable(not locked)
+    bar.grip:SetShown(not locked)
+    local start = locked and 51 or 75
+    bar.handle:ClearAllPoints()
+    bar.handle:SetPoint("LEFT", locked and 7 or 31, 0)
+    bar.empty:ClearAllPoints()
+    bar.empty:SetPoint("LEFT", start + 2, 0)
     local favorites = F.Profiles.Favorites()
     local count = math.min(3, #favorites)
     for index, button in ipairs(bar.buttons) do
+        button:ClearAllPoints()
+        button:SetPoint("LEFT", start + (index - 1) * 142, 0)
         local profile = favorites[index]
         if profile and type(profile) ~= "table" then profile = F.Profiles.Get(profile) end
         button.profile = profile
@@ -784,7 +815,7 @@ function U.RefreshQuickBar()
         end
     end
     bar.empty:SetShown(count == 0)
-    bar:SetWidth(count == 0 and 368 or 75 + count * 142)
+    bar:SetWidth(count == 0 and start + 293 or start + count * 142)
     local requestedScale = db.ui.quickBarScale or 1
     local availableWidth = math.max(1, UIParent:GetWidth() - 32)
     local availableHeight = math.max(1, UIParent:GetHeight() - 32)

@@ -62,6 +62,7 @@ function methods:SetFrameStrata(value) self.strata = value end
 function methods:SetFrameLevel(value) self.level = value end
 function methods:GetFrameLevel() return self.level or 1 end
 function methods:SetScale(value) self.scale = value end
+function methods:SetMovable(value) self.movable = value end
 function methods:GetScale() return self.scale or 1 end
 function methods:StartMoving() self.moving = true end
 function methods:StopMovingOrSizing() self.moving = false end
@@ -91,7 +92,7 @@ function methods:Click()
 end
 function methods:SetOwner() end
 function methods:AddLine() end
-for _, name in ipairs({"SetClampedToScreen", "SetMovable", "EnableMouse", "RegisterForDrag",
+for _, name in ipairs({"SetClampedToScreen", "EnableMouse", "RegisterForDrag",
     "EnableMouseWheel", "SetOrientation", "SetValueStep", "SetAutoFocus", "SetMaxLetters",
     "SetFocus", "ClearFocus", "HighlightText", "SetObeyStepOnDrag", "Raise"}) do
     methods[name] = function() end
@@ -190,6 +191,33 @@ local _, _, _, x, y = U.quickBar:GetPoint()
 assert(x == 120 and y == -75, "Recreating the bar must restore its saved position")
 F.SetQuickBarScale(1)
 U.Refresh()
+bar = U.quickBar
+local width = bar:GetWidth()
+bar.scripts.OnDragStart(bar)
+assert(bar.moving)
+U.quickLock:Click()
+assert(F.Profiles.GetDB().ui.quickBarLocked and U.quickLock:GetChecked())
+assert(not bar.moving and bar.movable == false and not bar.grip:IsShown())
+assert(bar:GetWidth() == width - 24, "Locked bar should remove the space for its drag handle")
+bar.scripts.OnDragStart(bar)
+bar.grip.scripts.OnDragStart(bar.grip)
+assert(not bar.moving, "Locked bar must reject background and handle dragging")
+bar.grip.scripts.OnMouseWheel(bar.grip, 1)
+assert(F.Profiles.GetDB().ui.quickBarScale == 1, "Hidden handle must not resize a locked bar")
+bar.handle:Click(); assert(not U.window:IsShown())
+bar.handle:Click(); assert(U.window:IsShown(), "Locked bar must keep the FP button usable")
+bar.buttons[1]:Click(); context.flush()
+assert(F.Graphics.Compare(first.modules.graphics).matches, "Locked bar must keep favorite buttons usable")
+saved = F.Profiles.GetDB()
+assert(F.Profiles.Initialize(saved))
+bar:Hide(); U.quickBar = nil
+U.Refresh()
+bar = U.quickBar
+assert(bar.movable == false and not bar.grip:IsShown(), "Recreated bar must retain its lock")
+U.quickLock:Click()
+assert(not F.Profiles.GetDB().ui.quickBarLocked and bar.grip:IsShown() and bar.movable)
+bar.scripts.OnDragStart(bar); assert(bar.moving)
+bar.scripts.OnDragStop(bar); assert(not bar.moving)
 U.SetNotice(F.L["Changes made in the game options do not overwrite your saved profiles."], false)
-print("PASS UI lifecycle, dialogs, actions, favorites, busy state, differences, French localization, bar movement and saved sizing")
+print("PASS UI lifecycle, dialogs, actions, favorites, busy state, differences, localization, movement, sizing and persistent locking")
 ForeverProfilesMockUI = {widgets = widgets, named = named, F = F}

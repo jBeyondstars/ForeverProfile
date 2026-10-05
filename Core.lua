@@ -89,6 +89,12 @@ function F.SetQuickBarVisible(visible)
     Refresh()
 end
 
+function F.SetQuickBarLocked(locked)
+    if not F.ready then return end
+    P.GetDB().ui.quickBarLocked = locked == true
+    Refresh()
+end
+
 function F.SetQuickBarScale(scale)
     if not F.ready or type(scale) ~= "number" or scale ~= scale
         or scale == math.huge or scale == -math.huge then return end
