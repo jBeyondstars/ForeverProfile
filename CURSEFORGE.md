@@ -4,6 +4,8 @@
 
 # ForeverProfiles
 
+**Tired of FPS drops in busy cities or crowded areas?**
+
 Save custom graphics profiles for **WoW Forever** and switch between them with one-click favorites or keyboard shortcuts.
 
 ## Features
