@@ -10,6 +10,8 @@ Client cible observé : 1.60.1, build 70170, Interface 16001. Le client bêta é
 - [ ] Vérifier les réglages séparés de raid/champ de bataille et leur activation native. Tester en extérieur et en instance.
 - [ ] Favoris : trois profils maximum ; poignée et fond déplacent la barre sans ouvrir la fenêtre ; le bouton FP ouvre la fenêtre et les boutons de profils les appliquent en un clic.
 - [ ] Taille des favoris : curseur 60–180 % et molette sur la poignée redimensionnent boutons et texte ensemble ; taille conservée au rafraîchissement, à l’ajout/retrait d’un favori et après `/reload`.
+- [ ] Dimensions indépendantes : modifier la largeur garde la hauteur et la taille du texte ; modifier la hauteur garde la largeur. Vérifier les trois favoris à la largeur minimale, la hauteur minimale, l’échelle 180 % et sur petit écran ; infobulles accessibles et aucun débordement.
+- [ ] Largeur auto : adapte au nombre de favoris et au verrouillage ; largeur manuelle conserve sa valeur lors d’un ajout/retrait de favori ou d’un verrouillage. Dimensions conservées après `/reload` et redémarrage.
 - [ ] Verrouillage : cocher masque la poignée sans espace vide, bloque le glissement du fond et garde FP/favoris utilisables ; décocher restaure le déplacement. État conservé après `/reload` et redémarrage.
 - [ ] Restauration : restitue la configuration précédant la dernière bascule ; une application déjà active ne remplace pas cette sauvegarde.
 - [ ] Renommer/dupliquer ; confirmer/annuler mise à jour et suppression ; leurs effets restent distincts.

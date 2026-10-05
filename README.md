@@ -22,6 +22,7 @@ La sélection d’un profil sert à le consulter. Seul le bouton d’application
 - Barre déplaçable de **3 favoris** : fais glisser sa poignée ou son fond pour la déplacer. Le bouton **FP** ouvre la fenêtre principale.
 - Case **Verrouiller la barre** dans `/fp` : fixe la position et masque la poignée de déplacement. Les boutons restent utilisables. Décoche-la pour déplacer à nouveau la barre ; le verrouillage est conservé entre les sessions.
 - Taille de la barre réglable de **60 à 180 %** dans la fenêtre principale, ou avec la molette sur la poignée. Boutons et texte changent de taille ensemble. Position et taille sont conservées entre les sessions.
+- **Largeur et hauteur indépendantes** dans `/fp` : largeur de 160 à 1 000, hauteur de 28 à 120. Les boutons se répartissent dans la barre sans étirer le texte. Les dimensions sont définies avant l’échelle globale ; elles sont conservées entre les sessions. **Largeur auto** rétablit l’adaptation au nombre de favoris. Si l’écran est trop petit, chaque dimension est limitée séparément à l’espace disponible.
 - **Restaurer les réglages précédents** revient à l’état capturé avant la dernière bascule. Cette sauvegarde temporaire reste disponible pendant la session ; `/reload` ou un redémarrage l’efface.
 - États **Actif**, **Modifié**, **Appliqué partiellement** calculés à partir des valeurs actuelles. Après un échec partiel, les écarts sont affichés dans le profil, avec leur cause en infobulle.
 - Fenêtre déplaçable, adaptation aux petits écrans et fermeture par Échap.

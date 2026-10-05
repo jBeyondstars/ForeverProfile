@@ -3,7 +3,7 @@ local U = {}
 F.UI = U
 
 local L = F.L
-local WIDTH, HEIGHT = 780, 540
+local WIDTH, HEIGHT = 780, 620
 local color = {
     background = { 0.045, 0.055, 0.070, 0.98 },
     panel = { 0.075, 0.090, 0.115, 1 },
@@ -170,6 +170,37 @@ local function ScrollArea(parent, width, height, x, y)
         if self.maximum == 0 then self.viewport:SetVerticalScroll(0) end
     end
     return holder
+end
+
+local function QuickBarSlider(parent, label, bottom, minimum, maximum, step, onChange, help)
+    local heading = Text(parent, 11, color.muted, 141, 20)
+    heading:SetPoint("BOTTOMLEFT", 363, bottom + 2)
+    heading:SetJustifyV("MIDDLE")
+    heading:SetText(label)
+    local slider = CreateFrame("Slider", nil, parent)
+    slider:SetSize(174, 24)
+    slider:SetPoint("BOTTOMLEFT", 512, bottom)
+    slider:SetOrientation("HORIZONTAL")
+    slider:SetMinMaxValues(minimum, maximum)
+    slider:SetValueStep(step)
+    if slider.SetObeyStepOnDrag then slider:SetObeyStepOnDrag(true) end
+    local track = slider:CreateTexture(nil, "BACKGROUND")
+    track:SetPoint("LEFT")
+    track:SetPoint("RIGHT")
+    track:SetHeight(4)
+    track:SetColorTexture(unpack(color.border))
+    local thumb = slider:CreateTexture(nil, "ARTWORK")
+    thumb:SetSize(12, 20)
+    thumb:SetColorTexture(unpack(color.accent))
+    slider:SetThumbTexture(thumb)
+    slider:SetScript("OnValueChanged", onChange)
+    slider:SetScript("OnEnter", function(self) Tooltip(self, label, help) end)
+    slider:SetScript("OnLeave", HideTooltip)
+    local value = Text(parent, 12, color.text, 60, 24)
+    value:SetPoint("BOTTOMLEFT", 702, bottom)
+    value:SetJustifyV("MIDDLE")
+    value:SetJustifyH("RIGHT")
+    return slider, heading, value
 end
 
 local function Selected()
@@ -533,13 +564,13 @@ function U.Initialize()
     applyHint:SetText(L["Selecting a profile does not apply it."])
 
     U.restore = Button(window, L["Restore previous settings"], 255, 32)
-    U.restore:SetPoint("BOTTOMLEFT", 18, 80)
+    U.restore:SetPoint("BOTTOMLEFT", 18, 158)
     U.restore.tooltipTitle = L["Restore previous settings"]
     U.restore.tooltipText = L["Return to the settings captured just before your last profile application."]
     U.restore:SetScript("OnClick", function() if not F.busy then F.RestorePrevious() end end)
     U.quickCheck = CreateFrame("CheckButton", nil, window, "UICheckButtonTemplate")
     U.quickCheck:SetSize(26, 26)
-    U.quickCheck:SetPoint("BOTTOMLEFT", 363, 88)
+    U.quickCheck:SetPoint("BOTTOMLEFT", 363, 164)
     U.quickCheck.label = Text(window, 12, color.text, 168, 28)
     U.quickCheck.label:SetPoint("LEFT", U.quickCheck, "RIGHT", 5, 0)
     U.quickCheck.label:SetJustifyV("MIDDLE")
@@ -551,7 +582,7 @@ function U.Initialize()
     U.quickCheck:SetScript("OnLeave", HideTooltip)
     U.quickLock = CreateFrame("CheckButton", nil, window, "UICheckButtonTemplate")
     U.quickLock:SetSize(26, 26)
-    U.quickLock:SetPoint("BOTTOMLEFT", 570, 88)
+    U.quickLock:SetPoint("BOTTOMLEFT", 570, 164)
     U.quickLock.label = Text(window, 12, color.text, 161, 28)
     U.quickLock.label:SetPoint("LEFT", U.quickLock, "RIGHT", 5, 0)
     U.quickLock.label:SetJustifyV("MIDDLE")
@@ -561,39 +592,27 @@ function U.Initialize()
         Tooltip(self, L["Lock favorite bar"], L["Keep the bar in place and hide its drag handle."])
     end)
     U.quickLock:SetScript("OnLeave", HideTooltip)
-    U.quickScaleLabel = Text(window, 11, color.muted, 141, 20)
-    U.quickScaleLabel:SetPoint("BOTTOMLEFT", 363, 60)
-    U.quickScaleLabel:SetJustifyV("MIDDLE")
-    U.quickScaleLabel:SetText(L["Favorite bar size"])
-    U.quickScale = CreateFrame("Slider", nil, window)
-    U.quickScale:SetSize(174, 24)
-    U.quickScale:SetPoint("BOTTOMLEFT", 512, 58)
-    U.quickScale:SetOrientation("HORIZONTAL")
-    U.quickScale:SetMinMaxValues(60, 180)
-    U.quickScale:SetValueStep(10)
-    if U.quickScale.SetObeyStepOnDrag then U.quickScale:SetObeyStepOnDrag(true) end
-    local scaleTrack = U.quickScale:CreateTexture(nil, "BACKGROUND")
-    scaleTrack:SetPoint("LEFT")
-    scaleTrack:SetPoint("RIGHT")
-    scaleTrack:SetHeight(4)
-    scaleTrack:SetColorTexture(unpack(color.border))
-    local scaleThumb = U.quickScale:CreateTexture(nil, "ARTWORK")
-    scaleThumb:SetSize(12, 20)
-    scaleThumb:SetColorTexture(unpack(color.accent))
-    U.quickScale:SetThumbTexture(scaleThumb)
-    U.quickScale:SetScript("OnValueChanged", function(_, value)
+    U.quickWidth, U.quickWidthLabel, U.quickWidthValue = QuickBarSlider(window,
+        L["Favorite bar width"], 132, 160, 1000, 10, function(_, value)
+        if U.refreshingDimensions then return end
+        F.SetQuickBarWidth(math.max(160, math.min(1000, math.floor(value / 10 + 0.5) * 10)))
+    end, L["Adjust the bar width without changing its height or text size."])
+    U.quickHeight, U.quickHeightLabel, U.quickHeightValue = QuickBarSlider(window,
+        L["Favorite bar height"], 104, 28, 120, 2, function(_, value)
+        if U.refreshingDimensions then return end
+        F.SetQuickBarHeight(math.max(28, math.min(120, math.floor(value / 2 + 0.5) * 2)))
+    end, L["Adjust the bar height without changing its width or text size."])
+    U.quickScale, U.quickScaleLabel, U.quickScaleValue = QuickBarSlider(window,
+        L["Favorite bar scale"], 76, 60, 180, 10, function(_, value)
         if U.refreshingScale then return end
         local percent = math.max(60, math.min(180, math.floor(value / 10 + 0.5) * 10))
         F.SetQuickBarScale(percent / 100)
-    end)
-    U.quickScale:SetScript("OnEnter", function(self)
-        Tooltip(self, L["Favorite bar size"], L["Resize the whole bar, including its buttons and text. You can also use the mouse wheel over its dotted handle."])
-    end)
-    U.quickScale:SetScript("OnLeave", HideTooltip)
-    U.quickScaleValue = Text(window, 12, color.text, 60, 24)
-    U.quickScaleValue:SetPoint("BOTTOMLEFT", 702, 58)
-    U.quickScaleValue:SetJustifyV("MIDDLE")
-    U.quickScaleValue:SetJustifyH("RIGHT")
+    end, L["Resize the whole bar, including its buttons and text. You can also use the mouse wheel over its dotted handle."])
+    U.quickWidthAuto = Button(window, L["Auto width"], 110, 24)
+    U.quickWidthAuto:SetPoint("BOTTOMLEFT", 18, 132)
+    U.quickWidthAuto.tooltipTitle = L["Auto width"]
+    U.quickWidthAuto.tooltipText = L["Restore automatic width based on the number of favorite profiles."]
+    U.quickWidthAuto:SetScript("OnClick", function() F.SetQuickBarWidth(nil) end)
     U.notice = Text(window, 12, color.muted, 742, 40)
     U.notice:SetPoint("BOTTOMLEFT", 19, 14)
     U.notice:SetSpacing(3)
@@ -678,6 +697,14 @@ function U.Refresh()
     local db = DB()
     U.quickCheck:SetChecked(db.ui and db.ui.quickBarVisible or false)
     U.quickLock:SetChecked(db.ui and db.ui.quickBarLocked or false)
+    local barWidth, barHeight = F.GetQuickBarDimensions()
+    U.refreshingDimensions = true
+    U.quickWidth:SetValue(barWidth)
+    U.quickWidthValue:SetText(string.format("%d px", barWidth))
+    U.quickHeight:SetValue(barHeight)
+    U.quickHeightValue:SetText(string.format("%d px", barHeight))
+    U.refreshingDimensions = nil
+    Enabled(U.quickWidthAuto, db.ui and db.ui.quickBarWidth ~= nil)
     local barScale = db.ui and db.ui.quickBarScale or 1
     U.refreshingScale = true
     U.quickScale:SetValue(barScale * 100)
@@ -772,6 +799,7 @@ local function CreateQuickBar()
     bar.empty = Text(bar, 11, color.muted, 275, 30)
     bar.empty:SetPoint("LEFT", 77, 0)
     bar.empty:SetJustifyV("MIDDLE")
+    bar.empty:SetWordWrap(false)
     bar.empty:SetText(L["Choose favorite profiles in the main window."])
     U.quickBar = bar
     return bar
@@ -798,9 +826,31 @@ function U.RefreshQuickBar()
     bar.empty:SetPoint("LEFT", start + 2, 0)
     local favorites = F.Profiles.Favorites()
     local count = math.min(3, #favorites)
+    local width, height = F.GetQuickBarDimensions()
+    local requestedScale = db.ui.quickBarScale or 1
+    local availableWidth = math.max(1, UIParent:GetWidth() - 32)
+    local availableHeight = math.max(1, UIParent:GetHeight() - 32)
+    -- Constrain each dimension separately: narrowing a bar to fit the screen
+    -- must not shrink its height or change the size of its text.
+    width = math.min(width, availableWidth / requestedScale)
+    height = math.min(height, availableHeight / requestedScale)
+    bar:SetSize(width, height)
+    local buttonHeight = math.max(14, height - 14)
+    bar.handle:SetSize(38, buttonHeight)
+    bar.handle.label:SetSize(26, buttonHeight)
+    bar.grip:SetSize(18, buttonHeight)
+    local dotSpacing = math.min(7, (buttonHeight - 3) / 2)
+    for index, dot in ipairs(bar.grip.dots) do
+        dot:ClearAllPoints()
+        dot:SetPoint("CENTER", bar.grip, "CENTER", (index - 1) % 2 == 0 and -3.5 or 3.5,
+            (1 - math.floor((index - 1) / 2)) * dotSpacing)
+    end
+    local buttonWidth = (width - start) / math.max(1, count) - 6
     for index, button in ipairs(bar.buttons) do
         button:ClearAllPoints()
-        button:SetPoint("LEFT", start + (index - 1) * 142, 0)
+        button:SetPoint("LEFT", start + (index - 1) * (buttonWidth + 6), 0)
+        button:SetSize(buttonWidth, buttonHeight)
+        button.label:SetSize(math.max(1, buttonWidth - 12), buttonHeight)
         local profile = favorites[index]
         if profile and type(profile) ~= "table" then profile = F.Profiles.Get(profile) end
         button.profile = profile
@@ -815,10 +865,7 @@ function U.RefreshQuickBar()
         end
     end
     bar.empty:SetShown(count == 0)
-    bar:SetWidth(count == 0 and start + 293 or start + count * 142)
-    local requestedScale = db.ui.quickBarScale or 1
-    local availableWidth = math.max(1, UIParent:GetWidth() - 32)
-    local availableHeight = math.max(1, UIParent:GetHeight() - 32)
-    bar:SetScale(math.min(requestedScale, availableWidth / bar:GetWidth(), availableHeight / 44))
+    bar.empty:SetSize(width - start - 16, buttonHeight)
+    bar:SetScale(requestedScale)
     bar:Show()
 end

@@ -104,6 +104,39 @@ function F.SetQuickBarScale(scale)
     return scale
 end
 
+function F.GetQuickBarDimensions()
+    if not F.ready then return end
+    local ui = P.GetDB().ui
+    local count = math.min(3, #P.Favorites())
+    local start = ui.quickBarLocked and 51 or 75
+    local automaticWidth = count == 0 and start + 293 or start + count * 142
+    return ui.quickBarWidth or automaticWidth, ui.quickBarHeight or 44
+end
+
+local function SetBarDimension(key, value, minimum, maximum)
+    if not F.ready or type(value) ~= "number" or value ~= value
+        or value == math.huge or value == -math.huge then return end
+    value = math.floor(math.max(minimum, math.min(maximum, value)) + 0.5)
+    P.GetDB().ui[key] = value
+    Refresh()
+    return value
+end
+
+function F.SetQuickBarWidth(width)
+    if not F.ready then return end
+    if width == nil then
+        P.GetDB().ui.quickBarWidth = nil
+        Refresh()
+        local actualWidth = F.GetQuickBarDimensions()
+        return actualWidth
+    end
+    return SetBarDimension("quickBarWidth", width, 160, 1000)
+end
+
+function F.SetQuickBarHeight(height)
+    return SetBarDimension("quickBarHeight", height, 28, 120)
+end
+
 function F.GetProfileStatus(id)
     local profile = P.Get(id)
     if not profile then return L["Profile not found."], false end

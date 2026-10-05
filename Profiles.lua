@@ -214,7 +214,7 @@ function P.Initialize(saved)
 
     local result = {
         schemaVersion = 1, nextID = 1, profiles = {}, order = {}, favorites = {},
-        ui = { quickBarVisible = false, quickBarScale = 1, quickBarLocked = false }, lastSelectedID = nil,
+        ui = { quickBarVisible = false, quickBarScale = 1, quickBarLocked = false, quickBarHeight = 44 }, lastSelectedID = nil,
     }
     if type(saved) ~= "table" then db = result; return result end
 
@@ -268,6 +268,12 @@ function P.Initialize(saved)
         result.ui.quickBarLocked = saved.ui.quickBarLocked == true
         if IsFinite(saved.ui.quickBarScale) then
             result.ui.quickBarScale = math.max(0.6, math.min(1.8, saved.ui.quickBarScale))
+        end
+        if IsFinite(saved.ui.quickBarWidth) then
+            result.ui.quickBarWidth = math.floor(math.max(160, math.min(1000, saved.ui.quickBarWidth)) + 0.5)
+        end
+        if IsFinite(saved.ui.quickBarHeight) then
+            result.ui.quickBarHeight = math.floor(math.max(28, math.min(120, saved.ui.quickBarHeight)) + 0.5)
         end
         result.ui.windowPosition = SanitizePosition(saved.ui.windowPosition)
         result.ui.quickBarPosition = SanitizePosition(saved.ui.quickBarPosition)

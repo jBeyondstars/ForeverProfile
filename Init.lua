@@ -1,6 +1,6 @@
 local _, F = ...
 
-F.version = "0.1.3"
+F.version = "0.1.4"
 local fr = {
     ["Profiles"] = "Profils",
     ["Graphics"] = "Graphismes",
@@ -118,6 +118,13 @@ local fr = {
     ["Choose favorite profiles in the main window."] = "Choisis tes favoris dans la fenêtre principale.",
     ["Click to apply this profile."] = "Clique pour appliquer ce profil.",
     ["Favorite bar size"] = "Taille de la barre",
+    ["Favorite bar width"] = "Largeur de la barre",
+    ["Favorite bar height"] = "Hauteur de la barre",
+    ["Favorite bar scale"] = "Échelle de la barre",
+    ["Auto width"] = "Largeur auto",
+    ["Adjust the bar width without changing its height or text size."] = "Modifie la largeur sans changer la hauteur ni la taille du texte.",
+    ["Adjust the bar height without changing its width or text size."] = "Modifie la hauteur sans changer la largeur ni la taille du texte.",
+    ["Restore automatic width based on the number of favorite profiles."] = "Adapte automatiquement la largeur au nombre de profils favoris.",
     ["Move favorite bar"] = "Déplacer la barre de favoris",
     ["Drag this handle to move the bar. Use the mouse wheel to change its size."] = "Fais glisser cette poignée pour déplacer la barre. Utilise la molette pour modifier sa taille.",
     ["Click to open profiles."] = "Clique pour ouvrir les profils.",

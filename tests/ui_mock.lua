@@ -21,8 +21,12 @@ function methods:SetPoint(point, relative, relativePoint, x, y)
     if type(relative) == "number" then x, y, relative, relativePoint = relative, relativePoint, self.parent, point end
     relative = relative or self.parent
     relativePoint = relativePoint or point
-    self.points[#self.points + 1] = {point = point, relative = relative,
+    local updated = {point = point, relative = relative,
         relativePoint = relativePoint, x = x or 0, y = y or 0}
+    for index, existing in ipairs(self.points) do
+        if existing.point == point then self.points[index] = updated; return end
+    end
+    self.points[#self.points + 1] = updated
 end
 function methods:GetPoint()
     local p = self.points[1]
@@ -192,6 +196,38 @@ assert(x == 120 and y == -75, "Recreating the bar must restore its saved positio
 F.SetQuickBarScale(1)
 U.Refresh()
 bar = U.quickBar
+U.quickWidth:SetValue(400)
+assert(bar:GetWidth() == 400 and bar:GetHeight() == 44)
+U.quickHeight:SetValue(80)
+assert(bar:GetWidth() == 400 and bar:GetHeight() == 80)
+assert(U.quickWidthValue:GetText() == "400 px" and U.quickHeightValue:GetText() == "80 px")
+local fontSize = bar.buttons[1].label.fontSize
+U.quickWidth:SetValue(540)
+assert(bar:GetWidth() == 540 and bar:GetHeight() == 80)
+assert(bar.buttons[1].label.fontSize == fontSize, "Changing dimensions must not stretch text")
+F.ToggleFavorite(second.id)
+assert(bar:GetWidth() == 540 and bar:GetHeight() == 80, "Manual dimensions must survive favorite changes")
+F.ToggleFavorite(second.id)
+UIParent:SetWidth(400)
+F.SetQuickBarScale(1.5)
+assert(bar:GetScale() == 1.5 and bar:GetHeight() == 80, "Width fitting must not change height or scale")
+assert(bar:GetWidth() * bar:GetScale() <= UIParent:GetWidth() - 32)
+UIParent:SetWidth(1280)
+F.SetQuickBarScale(1)
+U.quickHeight:SetValue(28)
+for _, dot in ipairs(bar.grip.dots) do
+    local _, _, _, _, offset = dot:GetPoint()
+    local top = bar.grip:GetHeight() / 2 - offset - dot:GetHeight() / 2
+    assert(top >= 0 and top + dot:GetHeight() <= bar.grip:GetHeight(), "Grip must fit the minimum bar height")
+end
+local requested = F.Profiles.GetDB()
+assert(F.Profiles.Initialize(requested))
+U.Refresh()
+assert(bar:GetWidth() == 540 and bar:GetHeight() == 28)
+U.quickWidthAuto:Click()
+assert(F.Profiles.GetDB().ui.quickBarWidth == nil and bar:GetHeight() == 28)
+U.quickHeight:SetValue(44)
+U.Refresh()
 local width = bar:GetWidth()
 bar.scripts.OnDragStart(bar)
 assert(bar.moving)
@@ -219,5 +255,5 @@ assert(not F.Profiles.GetDB().ui.quickBarLocked and bar.grip:IsShown() and bar.m
 bar.scripts.OnDragStart(bar); assert(bar.moving)
 bar.scripts.OnDragStop(bar); assert(not bar.moving)
 U.SetNotice(F.L["Changes made in the game options do not overwrite your saved profiles."], false)
-print("PASS UI lifecycle, dialogs, actions, favorites, busy state, differences, localization, movement, sizing and persistent locking")
+print("PASS UI lifecycle, profiles, localization, movement, independent dimensions, screen fitting, sizing and persistent locking")
 ForeverProfilesMockUI = {widgets = widgets, named = named, F = F}
