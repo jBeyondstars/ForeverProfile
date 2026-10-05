@@ -1,3 +1,5 @@
+<p align="center"><img src="Media/Logo-512.png" alt="Forever Profiles logo" width="128"></p>
+
 # Forever Profiles
 
 An addon for WoW Forever **1.60.1 / Interface 16001**. Save your custom graphics settings and switch between configurations using a compact window, a favorites bar, or a keyboard shortcut.
