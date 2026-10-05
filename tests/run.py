@@ -1,7 +1,6 @@
 """Run the addon in Lua 5.1 with a mocked WoW client; no live game settings touched."""
 from pathlib import Path
 import os
-import re
 import sys
 import xml.etree.ElementTree as ET
 
@@ -25,12 +24,6 @@ for line in (addon / "ForeverProfiles.toc").read_text(encoding="utf-8").splitlin
         assert (addon / line).is_file(), f"Missing TOC file: {line}"
 runtime.execute((addon / "tests" / "run.lua").read_text(encoding="utf-8"))
 runtime.execute((addon / "tests" / "ui_mock.lua").read_text(encoding="utf-8"))
-literal_keys = set()
-for source in addon.glob("*.lua"):
-    literal_keys.update(key for _, key in re.findall(r'''L\[(["'])(.*?)\1\]''', source.read_text(encoding="utf-8")))
-translations = runtime.globals().ForeverProfilesTestContext["F"]["translations"]
-missing_keys = sorted(key for key in literal_keys if translations[key] is None)
-assert not missing_keys, f"Missing French UI translations: {missing_keys}"
 binding_targets = {
     "FOREVERPROFILES_TOGGLE": ("toggle", None),
     "FOREVERPROFILES_FAVORITE1": ("favorite", 1),
@@ -57,5 +50,10 @@ for binding in bindings:
 print("PASS dedicated binding discovery, XML format, labels and all five shortcut actions")
 if "--preview" in sys.argv:
     from preview import render
-    render(runtime, sys.argv[sys.argv.index("--preview") + 1])
+    destination = Path(sys.argv[sys.argv.index("--preview") + 1])
+    render(runtime, destination)
+    ui = runtime.globals().ForeverProfilesTestContext["F"]["UI"]
+    ui.SelectTab("favorites")
+    render(runtime, destination.with_stem(destination.stem + "-favorites"))
+    ui.SelectTab("profiles")
 print("Lua 5.1 syntax, binding XML, and TOC file checks passed.")

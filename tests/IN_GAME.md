@@ -1,23 +1,28 @@
-# Validation dans WoW Forever
+# In-game validation for WoW Forever
 
-Client cible observé : 1.60.1, build 70170, Interface 16001. Le client bêta évoluant, relever `/fp diagnostics` avant chaque session de vérification.
+Observed target: 1.60.1, build 70170, Interface 16001. Record `/fp diagnostics` before each test session because the beta client changes.
 
-- [ ] Nouveau lancement du client : addon visible, aucune erreur Lua à la connexion, aucune modification graphique automatique.
-- [ ] `/fp`, entrée Options → AddOns et raccourci d’ouverture fonctionnent ; Échap ferme fenêtre et dialogues.
-- [ ] Interface à différentes résolutions et échelles UI ; texte français/anglais lisible, listes longues accessibles au défilement.
-- [ ] Créer deux configurations natives différentes **après Appliquer** ; capturer chacune, puis vérifier les valeurs au retour dans les options.
-- [ ] Allers-retours entre les profils : réglages détaillés, valeurs personnalisées, anticrénelage, échelle de rendu et limites FPS fidèles.
-- [ ] Vérifier les réglages séparés de raid/champ de bataille et leur activation native. Tester en extérieur et en instance.
-- [ ] Favoris : trois profils maximum ; poignée et fond déplacent la barre sans ouvrir la fenêtre ; le bouton FP ouvre la fenêtre et les boutons de profils les appliquent en un clic.
-- [ ] Taille des favoris : curseur 60–180 % et molette sur la poignée redimensionnent boutons et texte ensemble ; taille conservée au rafraîchissement, à l’ajout/retrait d’un favori et après `/reload`.
-- [ ] Dimensions indépendantes : modifier la largeur garde la hauteur et la taille du texte ; modifier la hauteur garde la largeur. Vérifier les trois favoris à la largeur minimale, la hauteur minimale, l’échelle 180 % et sur petit écran ; infobulles accessibles et aucun débordement.
-- [ ] Largeur auto : adapte au nombre de favoris et au verrouillage ; largeur manuelle conserve sa valeur lors d’un ajout/retrait de favori ou d’un verrouillage. Dimensions conservées après `/reload` et redémarrage.
-- [ ] Verrouillage : cocher masque la poignée sans espace vide, bloque le glissement du fond et garde FP/favoris utilisables ; décocher restaure le déplacement. État conservé après `/reload` et redémarrage.
-- [ ] Restauration : restitue la configuration précédant la dernière bascule ; une application déjà active ne remplace pas cette sauvegarde.
-- [ ] Renommer/dupliquer ; confirmer/annuler mise à jour et suppression ; leurs effets restent distincts.
-- [ ] Modifier un réglage depuis les options du jeu : le statut du profil change sans écraser sa sauvegarde.
-- [ ] Avec Leatrix Plus et sa météo forcée, vérifier que tout écart est signalé comme application partielle, avec un détail lisible.
-- [ ] Bascule en combat : aucun taint ; réglages refusés signalés ; effets importants toujours lisibles selon le profil choisi.
-- [ ] Déterminer les options dont l’effet exige une opération supplémentaire, malgré une CVar correctement relue.
-- [ ] `/reload`, déconnexion/reconnexion puis arrêt normal/redémarrage : profils, favoris et positions conservés. Restauration temporaire réinitialisée.
-- [ ] Sans fenêtre ni barre visibles, absence de boucle de traitement permanente ; comparer les FPS dans une même scène.
+- [ ] Cold launch: addon appears, no Lua errors at login, and no automatic changes to graphics settings.
+- [ ] `/fp`, Options → AddOns, and the opening shortcut work. Escape closes the action menu, dialogs, and main window.
+- [ ] WoW-style frame, metallic borders, gold titles, beveled buttons, and red Apply action remain legible at different resolutions and UI scales.
+- [ ] All interface labels, messages, tooltips, and shortcuts stay in English on both English and French clients. Saved profile names retain their original text.
+- [ ] Profiles and Favorite bar tabs switch without changing game settings. Long profile lists and summaries remain scrollable.
+- [ ] The profile action menu opens Rename, Duplicate, and Delete. It dismisses on outside click, profile selection, tab switching, and closing the window.
+- [ ] General and Raid / instance summary tabs show the saved values for the appropriate mode; common settings remain visible.
+- [ ] Create two different native configurations after clicking Apply, capture each, then check the values after switching back.
+- [ ] Repeated switches faithfully restore detailed options, custom values, antialiasing, render scale, and FPS limits.
+- [ ] Separate raid/battleground settings and their native enable toggle work outdoors and in an instance.
+- [ ] Three favorites maximum. The handle and background move the bar without opening the window; FP opens the window and favorite buttons apply their profiles in one click.
+- [ ] Favorite slot summaries open the corresponding profile without applying it or changing favorite order.
+- [ ] Bar scale: slider 60–180% and mouse wheel over the handle resize buttons and text together. Scale survives refresh, changes to favorites, and reload.
+- [ ] Independent dimensions: width keeps height and font size; height keeps width. Test three favorites at minimum width/height, 180% scale, and on a small screen. Full names remain available in tooltips.
+- [ ] Auto width follows favorite count and lock state. Manual width remains fixed when favorites or locking change; dimensions survive reload and restart.
+- [ ] Locking hides the handle without a blank gap, stops background dragging, and keeps FP/favorite buttons usable. Unlocking restores movement; the setting survives reload and restart.
+- [ ] Restore previous settings returns to the configuration preceding the last switch. Applying an already active profile does not overwrite this backup.
+- [ ] Rename and duplicate work; updating/deleting can be confirmed or canceled. Switching profile selection while a dialog is open does not change the dialog's target.
+- [ ] Native option changes update profile status without overwriting saved settings.
+- [ ] With Leatrix Plus enforcing weather, partial application and readable differences/reasons are displayed.
+- [ ] In-combat switches cause no taint. Refused settings are reported, and combat cues remain readable according to the saved profile.
+- [ ] Identify options requiring an additional operation despite a matching CVar value.
+- [ ] Reload, relog, and normal shutdown/restart preserve profiles, favorites, dimensions, locking, and positions. The temporary restoration backup resets.
+- [ ] With window/bar hidden, no permanent update loop runs. Compare FPS in the same scene.

@@ -128,7 +128,7 @@ def render(runtime, destination):
         if bounds[0] < bounds[2] and bounds[1] < bounds[3]:
             image.alpha_composite(layer.crop(bounds), dest=bounds[:2])
     draw = ImageDraw.Draw(image)
-    draw.text((20, 685), "Aperçu simulé du code Lua — polices approximatives, sans client WoW", font=ImageFont.truetype("C:/Windows/Fonts/segoeui.ttf", 12), fill=(141, 159, 177))
+    draw.text((20, 685), "Simulated Lua layout — approximate fonts, without a running WoW client", font=ImageFont.truetype("C:/Windows/Fonts/segoeui.ttf", 12), fill=(141, 159, 177))
     destination = Path(destination)
     destination.parent.mkdir(parents=True, exist_ok=True)
     image.convert("RGB").save(destination)

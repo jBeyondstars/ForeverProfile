@@ -1,9 +1,8 @@
 ## Interface: 16001
 ## Title: Forever Profiles
 ## Notes: Save your graphics settings and switch between them in one click.
-## Notes-frFR: Sauvegarde tes réglages graphiques et change de profil en un clic.
 ## Author: Forever Profiles
-## Version: 0.1.4
+## Version: 0.2.0
 ## SavedVariables: ForeverProfilesDB
 
 Init.lua

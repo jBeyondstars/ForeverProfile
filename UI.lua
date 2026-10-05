@@ -3,16 +3,16 @@ local U = {}
 F.UI = U
 
 local L = F.L
-local WIDTH, HEIGHT = 780, 620
+local WIDTH, HEIGHT = 780, 550
 local color = {
-    background = { 0.045, 0.055, 0.070, 0.98 },
-    panel = { 0.075, 0.090, 0.115, 1 },
-    border = { 0.19, 0.24, 0.30, 1 },
-    text = { 0.91, 0.94, 0.97, 1 },
-    muted = { 0.64, 0.70, 0.78, 1 },
-    accent = { 0.44, 0.77, 0.96, 1 },
-    active = { 0.55, 0.83, 0.65, 1 },
-    warning = { 0.98, 0.73, 0.39, 1 },
+    background = { 0.098, 0.090, 0.075, 1 },
+    panel = { 0.063, 0.059, 0.051, 1 },
+    border = { 0.451, 0.408, 0.353, 1 },
+    text = { 0.933, 0.890, 0.812, 1 },
+    muted = { 0.64, 0.60, 0.53, 1 },
+    accent = { 0.843, 0.706, 0.420, 1 },
+    active = { 0.54, 0.76, 0.46, 1 },
+    warning = { 0.98, 0.68, 0.37, 1 },
 }
 
 local function Plain(value)
@@ -21,7 +21,7 @@ end
 
 local function ShortName(name)
     -- Stored names have already been validated as UTF-8. Leave room for the
-    -- translated copy suffix without cutting an accented character in half.
+    -- English copy suffix without cutting an accented character in half.
     local index, count = 1, 0
     while index <= #name and count < 42 do
         local byte = string.byte(name, index)
@@ -35,11 +35,46 @@ local function DB()
     return F.Profiles and F.Profiles.GetDB()
 end
 
+local function CloseMenu()
+    if U.menu then U.menu:Hide() end
+    if U.menuBlocker then U.menuBlocker:Hide() end
+    U.menuProfileID = nil
+end
+
 local function Fill(parent, tint, layer)
     local texture = parent:CreateTexture(nil, layer or "BACKGROUND")
     texture:SetAllPoints()
     texture:SetColorTexture(unpack(tint))
     return texture
+end
+
+local function Rim(parent, tint)
+    local edges = {}
+    for _, side in ipairs({ "TOP", "BOTTOM", "LEFT", "RIGHT" }) do
+        local edge = parent:CreateTexture(nil, "BORDER")
+        edge:SetColorTexture(unpack(tint or color.border))
+        if side == "TOP" or side == "BOTTOM" then
+            edge:SetPoint(side .. "LEFT")
+            edge:SetPoint(side .. "RIGHT")
+            edge:SetHeight(1)
+        else
+            edge:SetPoint("TOP" .. side)
+            edge:SetPoint("BOTTOM" .. side)
+            edge:SetWidth(1)
+        end
+        edges[#edges + 1] = edge
+    end
+    return edges
+end
+
+local function Skin(parent, tint)
+    Fill(parent, tint or color.background)
+    Rim(parent, color.border)
+    local bevel = parent:CreateTexture(nil, "BORDER")
+    bevel:SetPoint("TOPLEFT", 1, -1)
+    bevel:SetPoint("TOPRIGHT", -1, -1)
+    bevel:SetHeight(1)
+    bevel:SetColorTexture(0.28, 0.25, 0.20, 1)
 end
 
 local function Text(parent, size, tint, width, height)
@@ -57,12 +92,7 @@ end
 local function Surface(parent, width, height, tint)
     local panel = CreateFrame("Frame", nil, parent)
     panel:SetSize(width, height)
-    Fill(panel, tint or color.panel)
-    local bottom = panel:CreateTexture(nil, "BORDER")
-    bottom:SetColorTexture(unpack(color.border))
-    bottom:SetPoint("BOTTOMLEFT")
-    bottom:SetPoint("BOTTOMRIGHT")
-    bottom:SetHeight(1)
+    Skin(panel, tint or color.panel)
     return panel
 end
 
@@ -78,11 +108,38 @@ local function HideTooltip()
     if GameTooltip then GameTooltip:Hide() end
 end
 
+local function PaintButton(button, hovered)
+    local tint
+    if button.primary then
+        tint = hovered and { 0.53, 0.15, 0.10, 1 } or { 0.38, 0.10, 0.065, 1 }
+    elseif button.selected then
+        tint = hovered and { 0.32, 0.26, 0.15, 1 } or { 0.25, 0.20, 0.115, 1 }
+    else
+        tint = hovered and { 0.29, 0.245, 0.18, 1 } or { 0.20, 0.17, 0.13, 1 }
+    end
+    button.background:SetColorTexture(unpack(tint))
+    for _, edge in ipairs(button.rim or {}) do
+        edge:SetColorTexture(unpack(button.selected and color.accent or color.border))
+    end
+    button.label:SetTextColor(unpack(button.selected and color.accent or color.text))
+end
+
 local function Button(parent, label, width, height, primary)
     local button = CreateFrame("Button", nil, parent)
     button:SetSize(width, height or 30)
     button.primary = primary
-    button.background = Fill(button, primary and { 0.15, 0.37, 0.50, 1 } or { 0.12, 0.15, 0.19, 1 })
+    button.background = Fill(button, { 0.20, 0.17, 0.13, 1 })
+    button.rim = Rim(button)
+    local highlight = button:CreateTexture(nil, "BORDER")
+    highlight:SetPoint("TOPLEFT", 1, -1)
+    highlight:SetPoint("TOPRIGHT", -1, -1)
+    highlight:SetHeight(1)
+    highlight:SetColorTexture(0.42, 0.35, 0.24, 0.65)
+    local shadow = button:CreateTexture(nil, "BORDER")
+    shadow:SetPoint("BOTTOMLEFT", 1, 1)
+    shadow:SetPoint("BOTTOMRIGHT", -1, 1)
+    shadow:SetHeight(1)
+    shadow:SetColorTexture(0.04, 0.03, 0.02, 1)
     button.label = Text(button, 12, color.text, width - 12, height or 30)
     button.label:SetPoint("CENTER")
     button.label:SetJustifyH("CENTER")
@@ -91,14 +148,15 @@ local function Button(parent, label, width, height, primary)
     button.label:SetText(label)
     button:SetScript("OnEnter", function(self)
         if self:IsEnabled() then
-            self.background:SetColorTexture(unpack(self.primary and { 0.20, 0.46, 0.60, 1 } or { 0.17, 0.22, 0.28, 1 }))
+            PaintButton(self, true)
         end
         if self.tooltipTitle then Tooltip(self, self.tooltipTitle, self.tooltipText) end
     end)
     button:SetScript("OnLeave", function(self)
-        self.background:SetColorTexture(unpack(self.primary and { 0.15, 0.37, 0.50, 1 } or { 0.12, 0.15, 0.19, 1 }))
+        PaintButton(self)
         HideTooltip()
     end)
+    PaintButton(button)
     return button
 end
 
@@ -149,9 +207,9 @@ local function ScrollArea(parent, width, height, x, y)
     holder.slider:SetOrientation("VERTICAL")
     holder.slider:SetValueStep(1)
     holder.slider:SetMinMaxValues(0, 0)
-    Fill(holder.slider, { 0.10, 0.13, 0.17, 1 })
+    Fill(holder.slider, { 0.13, 0.115, 0.085, 1 })
     local thumb = holder.slider:CreateTexture(nil, "ARTWORK")
-    thumb:SetColorTexture(0.33, 0.43, 0.52, 1)
+    thumb:SetColorTexture(unpack(color.border))
     thumb:SetSize(7, 34)
     holder.slider:SetThumbTexture(thumb)
     holder.slider:SetScript("OnValueChanged", function(_, value)
@@ -173,13 +231,13 @@ local function ScrollArea(parent, width, height, x, y)
 end
 
 local function QuickBarSlider(parent, label, bottom, minimum, maximum, step, onChange, help)
-    local heading = Text(parent, 11, color.muted, 141, 20)
-    heading:SetPoint("BOTTOMLEFT", 363, bottom + 2)
+    local heading = Text(parent, 12, color.text, 184, 20)
+    heading:SetPoint("BOTTOMLEFT", 16, bottom + 2)
     heading:SetJustifyV("MIDDLE")
     heading:SetText(label)
     local slider = CreateFrame("Slider", nil, parent)
-    slider:SetSize(174, 24)
-    slider:SetPoint("BOTTOMLEFT", 512, bottom)
+    slider:SetSize(334, 24)
+    slider:SetPoint("BOTTOMLEFT", 210, bottom)
     slider:SetOrientation("HORIZONTAL")
     slider:SetMinMaxValues(minimum, maximum)
     slider:SetValueStep(step)
@@ -196,8 +254,8 @@ local function QuickBarSlider(parent, label, bottom, minimum, maximum, step, onC
     slider:SetScript("OnValueChanged", onChange)
     slider:SetScript("OnEnter", function(self) Tooltip(self, label, help) end)
     slider:SetScript("OnLeave", HideTooltip)
-    local value = Text(parent, 12, color.text, 60, 24)
-    value:SetPoint("BOTTOMLEFT", 702, bottom)
+    local value = Text(parent, 12, color.text, 80, 24)
+    value:SetPoint("BOTTOMLEFT", 560, bottom)
     value:SetJustifyV("MIDDLE")
     value:SetJustifyH("RIGHT")
     return slider, heading, value
@@ -209,6 +267,7 @@ local function Selected()
 end
 
 local function Select(id)
+    CloseMenu()
     F.Profiles.SetSelected(id)
     U.summarySelection = nil
     U.Refresh()
@@ -239,7 +298,7 @@ local function Modal()
     modal:SetAllPoints()
     modal:SetFrameLevel(U.window:GetFrameLevel() + 30)
     modal:EnableMouse(true)
-    Fill(modal, { 0.015, 0.020, 0.030, 0.88 })
+    Fill(modal, { 0.025, 0.020, 0.015, 0.90 })
     local panel = Surface(modal, 450, 260, color.background)
     panel:SetPoint("CENTER")
     panel:SetFrameLevel(modal:GetFrameLevel() + 1)
@@ -249,7 +308,7 @@ local function Modal()
     modal.body = Text(panel, 12, color.muted, 406, 64)
     modal.body:SetPoint("TOPLEFT", 22, -58)
     modal.body:SetSpacing(3)
-    modal.editSurface = Surface(panel, 406, 34, { 0.11, 0.14, 0.18, 1 })
+    modal.editSurface = Surface(panel, 406, 34, color.panel)
     modal.editSurface:SetPoint("TOPLEFT", 22, -128)
     modal.edit = CreateFrame("EditBox", nil, modal.editSurface)
     modal.edit:SetPoint("TOPLEFT", 10, -5)
@@ -366,12 +425,22 @@ local function RefreshSummary(profile)
     local scroll = U.summaryScroll
     for _, row in ipairs(U.summaryRows) do row:Hide() end
     local snapshot = profile and profile.modules and profile.modules.graphics
-    local summaries = snapshot and F.Graphics and F.Graphics.GetSummary(snapshot) or {}
+    local allSummaries = snapshot and F.Graphics and F.Graphics.GetSummary(snapshot) or {}
+    local mode, summaries = U.summaryMode or "normal", {}
+    for _, setting in ipairs(allSummaries) do
+        if setting.group == mode or setting.group == "common" then
+            summaries[#summaries + 1] = setting
+        end
+    end
+    for key, button in pairs(U.summaryTabs or {}) do
+        button.selected = key == mode
+        PaintButton(button)
+    end
     local lastGroup, y, rowIndex = nil, 0, 0
     local groups = {
-        normal = L["World graphics"],
-        raid = L["Raid and battleground graphics"],
-        common = L["Shared options"],
+        normal = L["General"],
+        raid = L["Raid / instance"],
+        common = L["Shared"],
     }
     local function NextRow()
         rowIndex = rowIndex + 1
@@ -450,7 +519,7 @@ end
 local function ProfileRow(parent, width)
     local row = CreateFrame("Button", nil, parent)
     row:SetSize(width, 56)
-    row.background = Fill(row, { 0.085, 0.105, 0.135, 1 })
+    row.background = Fill(row, { 0.105, 0.095, 0.075, 1 })
     row.indicator = row:CreateTexture(nil, "ARTWORK")
     row.indicator:SetColorTexture(unpack(color.accent))
     row.indicator:SetPoint("TOPLEFT")
@@ -464,11 +533,11 @@ local function ProfileRow(parent, width)
     row.status:SetWordWrap(false)
     row:SetScript("OnClick", function(self) if self.profile then Select(self.profile.id) end end)
     row:SetScript("OnEnter", function(self)
-        self.background:SetColorTexture(0.13, 0.19, 0.25, 1)
+        self.background:SetColorTexture(0.22, 0.185, 0.12, 1)
         if self.profile then Tooltip(self, Plain(self.profile.name), L["Select this profile to view its saved settings."]) end
     end)
     row:SetScript("OnLeave", function(self)
-        self.background:SetColorTexture(unpack(self.selected and { 0.11, 0.21, 0.28, 1 } or { 0.085, 0.105, 0.135, 1 }))
+        self.background:SetColorTexture(unpack(self.selected and { 0.205, 0.165, 0.09, 1 } or { 0.105, 0.095, 0.075, 1 }))
         HideTooltip()
     end)
     return row
@@ -483,7 +552,7 @@ function U.Initialize()
     window:SetClampedToScreen(true)
     window:SetMovable(true)
     window:EnableMouse(true)
-    Fill(window, color.background)
+    Skin(window, color.background)
     Position(window, "windowPosition", "CENTER", "CENTER", 0, 0)
     local drag = CreateFrame("Frame", nil, window)
     drag:SetPoint("TOPLEFT")
@@ -493,85 +562,163 @@ function U.Initialize()
     drag:RegisterForDrag("LeftButton")
     drag:SetScript("OnDragStart", function() window:StartMoving() end)
     drag:SetScript("OnDragStop", function() SavePosition(window, "windowPosition") end)
-    local title = Text(window, 23, color.text, 600, 30)
-    title:SetPoint("TOPLEFT", 20, -17)
+    local title = Text(window, 23, color.accent, 600, 30)
+    title:SetPoint("TOPLEFT", 20, -15)
     title:SetText("Forever Profiles")
     local close = Button(window, "X", 28, 28)
-    close:SetPoint("TOPRIGHT", -16, -16)
+    close:SetPoint("TOPRIGHT", -16, -14)
     close.tooltipTitle = L["Close"]
     close:SetScript("OnClick", function() window:Hide() end)
     UISpecialFrames[#UISpecialFrames + 1] = "ForeverProfilesWindow"
 
-    local listPanel = Surface(window, 232, 352)
-    listPanel:SetPoint("TOPLEFT", 18, -64)
-    U.listTitle = Text(listPanel, 13, color.muted, 208, 20)
+    U.profilePanel = CreateFrame("Frame", nil, window)
+    U.profilePanel:SetSize(744, 398)
+    U.profilePanel:SetPoint("TOPLEFT", 18, -60)
+    local listPanel = Surface(U.profilePanel, 232, 338)
+    listPanel:SetPoint("TOPLEFT")
+    U.listTitle = Text(listPanel, 13, color.accent, 208, 20)
     U.listTitle:SetPoint("TOPLEFT", 12, -12)
-    U.listScroll = ScrollArea(listPanel, 208, 245, 12, -43)
+    U.listScroll = ScrollArea(listPanel, 208, 231, 12, -43)
     U.profileRows = {}
     U.listEmpty = Text(U.listScroll.content, 12, color.muted, 187, 140)
     U.listEmpty:SetPoint("TOPLEFT", 4, -14)
     U.listEmpty:SetSpacing(4)
     U.listEmpty:SetText(L["No profiles yet. Configure your graphics in the game options, then save your current settings."])
-    U.create = Button(listPanel, L["Save current settings"], 208, 32, true)
+    U.create = Button(listPanel, L["Save current settings"], 208, 32)
     U.create:SetPoint("BOTTOMLEFT", 12, 12)
     U.create:SetScript("OnClick", function() NameDialog("create") end)
 
-    local detail = Surface(window, 494, 352)
-    detail:SetPoint("TOPLEFT", 268, -64)
+    local detail = Surface(U.profilePanel, 494, 338)
+    detail:SetPoint("TOPLEFT", 250, 0)
     U.detail = detail
-    U.profileName = Text(detail, 19, color.text, 316, 29)
+    U.profileName = Text(detail, 19, color.accent, 312, 29)
     U.profileName:SetPoint("TOPLEFT", 16, -13)
     U.profileName:SetWordWrap(false)
-    U.favorite = Button(detail, L["Favorite"], 128, 25)
-    U.favorite:SetPoint("TOPRIGHT", -16, -15)
+    local nameTooltip = CreateFrame("Frame", nil, detail)
+    nameTooltip:SetSize(312, 29)
+    nameTooltip:SetPoint("TOPLEFT", 16, -13)
+    nameTooltip:EnableMouse(true)
+    nameTooltip:SetScript("OnEnter", function(self)
+        local profile = Selected()
+        if profile then Tooltip(self, Plain(profile.name)) end
+    end)
+    nameTooltip:SetScript("OnLeave", HideTooltip)
+    U.favorite = Button(detail, L["Favorite"], 96, 25)
+    U.favorite:SetPoint("TOPRIGHT", -56, -15)
     U.favorite.tooltipTitle = L["Quick access"]
     U.favorite.tooltipText = L["Keep up to three favorite profiles in the quick bar."]
     U.favorite:SetScript("OnClick", function()
         local profile = Selected()
         if profile and not F.busy then F.ToggleFavorite(profile.id) end
     end)
-    U.status = Text(detail, 12, color.muted, 462, 22)
-    U.status:SetPoint("TOPLEFT", 16, -47)
-    U.rename = Button(detail, L["Rename"], 88, 28)
-    U.rename:SetPoint("TOPLEFT", 16, -79)
-    U.rename:SetScript("OnClick", function() local p = Selected(); if p then NameDialog("rename", p) end end)
-    U.duplicate = Button(detail, L["Duplicate"], 92, 28)
-    U.duplicate:SetPoint("LEFT", U.rename, "RIGHT", 8, 0)
-    U.duplicate:SetScript("OnClick", function() local p = Selected(); if p then NameDialog("duplicate", p) end end)
-    U.update = Button(detail, L["Update"], 104, 28)
-    U.update:SetPoint("LEFT", U.duplicate, "RIGHT", 8, 0)
-    U.update.tooltipTitle = L["Update saved settings"]
-    U.update.tooltipText = L["Replace this profile with your current game settings."]
-    U.update:SetScript("OnClick", function() local p = Selected(); if p then ConfirmDialog("update", p) end end)
-    U.delete = Button(detail, L["Delete"], 82, 28)
-    U.delete:SetPoint("LEFT", U.update, "RIGHT", 8, 0)
-    U.delete:SetScript("OnClick", function() local p = Selected(); if p then ConfirmDialog("delete", p) end end)
-    U.summaryScroll = ScrollArea(detail, 462, 166, 16, -128)
+    U.menuButton = Button(detail, "...", 30, 25)
+    U.menuButton:SetPoint("TOPRIGHT", -16, -15)
+    U.menuButton.tooltipTitle = L["Profile actions"]
+    U.status = Text(detail, 12, color.muted, 462, 30)
+    U.status:SetPoint("TOPLEFT", 16, -49)
+    U.status:SetSpacing(2)
+    U.summaryTabs = {}
+    U.summaryTabs.normal = Button(detail, L["General"], 110, 25)
+    U.summaryTabs.normal:SetPoint("TOPLEFT", 16, -87)
+    U.summaryTabs.raid = Button(detail, L["Raid / instance"], 145, 25)
+    U.summaryTabs.raid:SetPoint("LEFT", U.summaryTabs.normal, "RIGHT", 6, 0)
+    U.summaryTabs.normal:SetScript("OnClick", function() U.SetSummaryMode("normal") end)
+    U.summaryTabs.raid:SetScript("OnClick", function() U.SetSummaryMode("raid") end)
+    U.summaryScroll = ScrollArea(detail, 462, 155, 16, -125)
     U.summaryRows = {}
     U.summaryEmpty = Text(U.summaryScroll, 13, color.muted, 405, 95)
     U.summaryEmpty:SetPoint("TOPLEFT", 4, -10)
     U.summaryEmpty:SetSpacing(4)
     U.summaryEmpty:SetText(L["Save a profile to see its graphics settings here."])
-    U.apply = Button(detail, L["Apply profile"], 190, 32, true)
+    U.apply = Button(detail, L["Apply profile"], 174, 32, true)
     U.apply:SetPoint("BOTTOMRIGHT", -16, 12)
     U.apply:SetScript("OnClick", function()
         local profile = Selected()
         if profile and not F.busy then F.ApplyProfile(profile.id) end
     end)
-    local applyHint = Text(detail, 10, color.muted, 235, 31)
-    applyHint:SetPoint("BOTTOMLEFT", 16, 12)
-    applyHint:SetJustifyV("MIDDLE")
-    applyHint:SetText(L["Selecting a profile does not apply it."])
-
-    U.restore = Button(window, L["Restore previous settings"], 255, 32)
-    U.restore:SetPoint("BOTTOMLEFT", 18, 158)
+    U.update = Button(detail, L["Update"], 128, 32)
+    U.update:SetPoint("BOTTOMLEFT", 16, 12)
+    U.update.tooltipTitle = L["Update saved settings"]
+    U.update.tooltipText = L["Replace this profile with your current game settings."]
+    U.update:SetScript("OnClick", function()
+        local profile = Selected()
+        if profile then ConfirmDialog("update", profile) end
+    end)
+    U.restore = Button(U.profilePanel, L["Restore previous settings"], 255, 32)
+    U.restore:SetPoint("BOTTOMLEFT", 0, 12)
     U.restore.tooltipTitle = L["Restore previous settings"]
     U.restore.tooltipText = L["Return to the settings captured just before your last profile application."]
     U.restore:SetScript("OnClick", function() if not F.busy then F.RestorePrevious() end end)
-    U.quickCheck = CreateFrame("CheckButton", nil, window, "UICheckButtonTemplate")
+    local selectionHint = Text(U.profilePanel, 11, color.muted, 450, 32)
+    selectionHint:SetPoint("LEFT", U.restore, "RIGHT", 20, 0)
+    selectionHint:SetJustifyV("MIDDLE")
+    selectionHint:SetText(L["Selecting a profile does not apply it."])
+
+    -- An owned dismissal layer avoids touching Blizzard's global dropdowns.
+    U.menuBlocker = CreateFrame("Frame", nil, window)
+    U.menuBlocker:SetAllPoints(UIParent)
+    U.menuBlocker:SetFrameLevel(window:GetFrameLevel() + 15)
+    U.menuBlocker:EnableMouse(true)
+    U.menuBlocker:SetScript("OnMouseDown", CloseMenu)
+    U.menuBlocker:Hide()
+    U.menu = CreateFrame("Frame", "ForeverProfilesMenu", window)
+    U.menu:SetSize(152, 106)
+    U.menu:SetPoint("TOPRIGHT", U.menuButton, "BOTTOMRIGHT", 0, -4)
+    U.menu:SetFrameLevel(window:GetFrameLevel() + 16)
+    U.menu:EnableMouse(true)
+    Skin(U.menu, color.background)
+    U.menu:SetScript("OnHide", function()
+        U.menuBlocker:Hide()
+        U.menuProfileID = nil
+    end)
+    U.menu:Hide()
+    UISpecialFrames[#UISpecialFrames + 1] = "ForeverProfilesMenu"
+    U.rename = Button(U.menu, L["Rename"], 136, 26)
+    U.rename:SetPoint("TOPLEFT", 8, -8)
+    U.duplicate = Button(U.menu, L["Duplicate"], 136, 26)
+    U.duplicate:SetPoint("TOPLEFT", 8, -40)
+    U.delete = Button(U.menu, L["Delete"], 136, 26)
+    U.delete:SetPoint("TOPLEFT", 8, -72)
+    local function MenuProfile()
+        return (U.menuProfileID and F.Profiles.Get(U.menuProfileID)) or Selected()
+    end
+    U.rename:SetScript("OnClick", function()
+        local profile = MenuProfile()
+        CloseMenu()
+        if profile then NameDialog("rename", profile) end
+    end)
+    U.duplicate:SetScript("OnClick", function()
+        local profile = MenuProfile()
+        CloseMenu()
+        if profile then NameDialog("duplicate", profile) end
+    end)
+    U.delete:SetScript("OnClick", function()
+        local profile = MenuProfile()
+        CloseMenu()
+        if profile then ConfirmDialog("delete", profile) end
+    end)
+    U.menuButton:SetScript("OnClick", function()
+        if U.menu:IsShown() then CloseMenu(); return end
+        local profile = Selected()
+        if not profile or F.busy then return end
+        U.menuProfileID = profile.id
+        U.menuBlocker:Show()
+        U.menu:Show()
+    end)
+
+    U.barPanel = Surface(window, 744, 398)
+    U.barPanel:SetPoint("TOPLEFT", 18, -60)
+    local barTitle = Text(U.barPanel, 18, color.accent, 680, 26)
+    barTitle:SetPoint("TOPLEFT", 16, -12)
+    barTitle:SetText(L["Favorite bar"])
+    local barHelp = Text(U.barPanel, 12, color.muted, 700, 34)
+    barHelp:SetPoint("TOPLEFT", 16, -44)
+    barHelp:SetSpacing(2)
+    barHelp:SetText(L["Choose up to three profiles for one-click access. Add or remove them with Favorite in the Profiles tab."])
+    U.quickCheck = CreateFrame("CheckButton", nil, U.barPanel, "UICheckButtonTemplate")
     U.quickCheck:SetSize(26, 26)
-    U.quickCheck:SetPoint("BOTTOMLEFT", 363, 164)
-    U.quickCheck.label = Text(window, 12, color.text, 168, 28)
+    U.quickCheck:SetPoint("TOPLEFT", 12, -90)
+    U.quickCheck.label = Text(U.barPanel, 12, color.text, 260, 28)
     U.quickCheck.label:SetPoint("LEFT", U.quickCheck, "RIGHT", 5, 0)
     U.quickCheck.label:SetJustifyV("MIDDLE")
     U.quickCheck.label:SetText(L["Show favorite quick bar"])
@@ -580,10 +727,10 @@ function U.Initialize()
         Tooltip(self, L["Show favorite quick bar"], L["Apply a favorite profile in one click. Drag the dotted handle to move the bar."])
     end)
     U.quickCheck:SetScript("OnLeave", HideTooltip)
-    U.quickLock = CreateFrame("CheckButton", nil, window, "UICheckButtonTemplate")
+    U.quickLock = CreateFrame("CheckButton", nil, U.barPanel, "UICheckButtonTemplate")
     U.quickLock:SetSize(26, 26)
-    U.quickLock:SetPoint("BOTTOMLEFT", 570, 164)
-    U.quickLock.label = Text(window, 12, color.text, 161, 28)
+    U.quickLock:SetPoint("TOPLEFT", 330, -90)
+    U.quickLock.label = Text(U.barPanel, 12, color.text, 300, 28)
     U.quickLock.label:SetPoint("LEFT", U.quickLock, "RIGHT", 5, 0)
     U.quickLock.label:SetJustifyV("MIDDLE")
     U.quickLock.label:SetText(L["Lock favorite bar"])
@@ -592,40 +739,100 @@ function U.Initialize()
         Tooltip(self, L["Lock favorite bar"], L["Keep the bar in place and hide its drag handle."])
     end)
     U.quickLock:SetScript("OnLeave", HideTooltip)
-    U.quickWidth, U.quickWidthLabel, U.quickWidthValue = QuickBarSlider(window,
-        L["Favorite bar width"], 132, 160, 1000, 10, function(_, value)
+    U.quickWidth, U.quickWidthLabel, U.quickWidthValue = QuickBarSlider(U.barPanel,
+        L["Favorite bar width"], 230, 160, 1000, 10, function(_, value)
         if U.refreshingDimensions then return end
         F.SetQuickBarWidth(math.max(160, math.min(1000, math.floor(value / 10 + 0.5) * 10)))
     end, L["Adjust the bar width without changing its height or text size."])
-    U.quickHeight, U.quickHeightLabel, U.quickHeightValue = QuickBarSlider(window,
-        L["Favorite bar height"], 104, 28, 120, 2, function(_, value)
+    U.quickHeight, U.quickHeightLabel, U.quickHeightValue = QuickBarSlider(U.barPanel,
+        L["Favorite bar height"], 194, 28, 120, 2, function(_, value)
         if U.refreshingDimensions then return end
         F.SetQuickBarHeight(math.max(28, math.min(120, math.floor(value / 2 + 0.5) * 2)))
     end, L["Adjust the bar height without changing its width or text size."])
-    U.quickScale, U.quickScaleLabel, U.quickScaleValue = QuickBarSlider(window,
-        L["Favorite bar scale"], 76, 60, 180, 10, function(_, value)
+    U.quickScale, U.quickScaleLabel, U.quickScaleValue = QuickBarSlider(U.barPanel,
+        L["Favorite bar scale"], 158, 60, 180, 10, function(_, value)
         if U.refreshingScale then return end
         local percent = math.max(60, math.min(180, math.floor(value / 10 + 0.5) * 10))
         F.SetQuickBarScale(percent / 100)
     end, L["Resize the whole bar, including its buttons and text. You can also use the mouse wheel over its dotted handle."])
-    U.quickWidthAuto = Button(window, L["Auto width"], 110, 24)
-    U.quickWidthAuto:SetPoint("BOTTOMLEFT", 18, 132)
+    U.quickWidthAuto = Button(U.barPanel, L["Auto width"], 82, 24)
+    U.quickWidthAuto:SetPoint("BOTTOMLEFT", 646, 230)
     U.quickWidthAuto.tooltipTitle = L["Auto width"]
     U.quickWidthAuto.tooltipText = L["Restore automatic width based on the number of favorite profiles."]
     U.quickWidthAuto:SetScript("OnClick", function() F.SetQuickBarWidth(nil) end)
-    U.notice = Text(window, 12, color.muted, 742, 40)
-    U.notice:SetPoint("BOTTOMLEFT", 19, 14)
-    U.notice:SetSpacing(3)
+    local favoriteHeading = Text(U.barPanel, 13, color.accent, 680, 20)
+    favoriteHeading:SetPoint("TOPLEFT", 16, -258)
+    favoriteHeading:SetText(L["Favorite shortcuts (up to 3)"])
+    U.favoriteSlots = {}
+    for index = 1, 3 do
+        local button = Button(U.barPanel, "", 712, 28)
+        button:SetPoint("TOPLEFT", 16, -286 - (index - 1) * 36)
+        button.label:SetJustifyH("LEFT")
+        button.slot = index
+        button:SetScript("OnClick", function(self)
+            local profile = F.Profiles.Favorites()[self.slot]
+            U.SelectTab("profiles")
+            if profile then
+                Select(profile.id)
+            else
+                U.SetNotice(L["Select a profile and click Favorite to add it to favorites."])
+            end
+        end)
+        U.favoriteSlots[index] = button
+    end
+
+    U.tabs = {}
+    U.tabs.profiles = Button(window, L["Profiles"], 120, 30)
+    U.tabs.profiles:SetPoint("BOTTOMLEFT", 18, 10)
+    U.tabs.favorites = Button(window, L["Favorite bar"], 150, 30)
+    U.tabs.favorites:SetPoint("LEFT", U.tabs.profiles, "RIGHT", 6, 0)
+    U.tabs.profiles:SetScript("OnClick", function() U.SelectTab("profiles") end)
+    U.tabs.favorites:SetScript("OnClick", function() U.SelectTab("favorites") end)
+    U.activeTab = U.activeTab or "profiles"
+    U.profilePanel:SetShown(U.activeTab == "profiles")
+    U.barPanel:SetShown(U.activeTab == "favorites")
+    for key, button in pairs(U.tabs) do
+        button.selected = U.activeTab == key
+        PaintButton(button)
+    end
+    U.notice = Text(window, 12, color.muted, 742, 32)
+    U.notice:SetPoint("BOTTOMLEFT", 19, 48)
+    U.notice:SetSpacing(2)
     window:SetScript("OnShow", function()
         Fit(window, WIDTH, HEIGHT)
         U.Refresh()
     end)
     window:SetScript("OnHide", function()
+        window:StopMovingOrSizing()
+        CloseMenu()
         if U.modal then U.modal:Hide() end
         HideTooltip()
     end)
     window:Hide()
     return window
+end
+
+function U.SelectTab(tab)
+    if tab ~= "profiles" and tab ~= "favorites" then return end
+    U.Initialize()
+    CloseMenu()
+    if U.modal then U.modal:Hide() end
+    U.activeTab = tab
+    U.profilePanel:SetShown(tab == "profiles")
+    U.barPanel:SetShown(tab == "favorites")
+    for key, button in pairs(U.tabs) do
+        button.selected = key == tab
+        PaintButton(button)
+    end
+    U.Refresh()
+end
+
+function U.SetSummaryMode(mode)
+    if mode ~= "normal" and mode ~= "raid" then return end
+    U.summaryMode = mode
+    U.summarySelection = nil
+    CloseMenu()
+    if U.summaryScroll then RefreshSummary(Selected()) end
 end
 
 function U.SetNotice(message, isError)
@@ -646,6 +853,7 @@ function U.Refresh()
         profile = profiles[1]
     end
     local favorites = FavoriteMap()
+    if F.busy or (U.menuProfileID and (not profile or U.menuProfileID ~= profile.id)) then CloseMenu() end
     U.listTitle:SetText(L["Profiles"] .. "  (" .. #profiles .. ")")
     for index, item in ipairs(profiles) do
         local row = U.profileRows[index]
@@ -661,7 +869,7 @@ function U.Refresh()
         row.status:SetText(status .. (favorites[item.id] and ("  /  " .. L["Favorite"]) or ""))
         row.status:SetTextColor(unpack(StatusColor(status)))
         row.indicator:SetShown(row.selected)
-        row.background:SetColorTexture(unpack(row.selected and { 0.11, 0.21, 0.28, 1 } or { 0.085, 0.105, 0.135, 1 }))
+        row.background:SetColorTexture(unpack(row.selected and { 0.205, 0.165, 0.09, 1 } or { 0.105, 0.095, 0.075, 1 }))
         row:Show()
     end
     for index = #profiles + 1, #U.profileRows do U.profileRows[index]:Hide() end
@@ -684,12 +892,17 @@ function U.Refresh()
     U.listSelection = profile and profile.id
     local canEdit = profile and not F.busy
     Enabled(U.create, not F.busy)
-    for _, button in ipairs({ U.rename, U.duplicate, U.update, U.delete, U.apply, U.favorite }) do
+    for _, button in ipairs({ U.rename, U.duplicate, U.update, U.delete, U.apply, U.favorite, U.menuButton }) do
         Enabled(button, canEdit)
     end
+    if U.modal then Enabled(U.modal.accept, not F.busy) end
     Enabled(U.restore, not F.busy and F.CanRestore and F.CanRestore())
     U.profileName:SetText(profile and Plain(profile.name) or L["Your first profile"])
-    U.favorite.label:SetText(profile and favorites[profile.id] and L["Remove favorite"] or L["Favorite"])
+    U.favorite.selected = profile and favorites[profile.id] or false
+    U.favorite.label:SetText(U.favorite.selected and L["Favorited"] or L["Favorite"])
+    U.favorite.tooltipText = U.favorite.selected and L["Click to remove this profile from favorites."]
+        or L["Keep up to three favorite profiles in the quick bar."]
+    PaintButton(U.favorite)
     local status = profile and Status(profile.id) or L["Save your current configuration to get started."]
     U.status:SetText(F.busy and L["Applying settings..."] or status)
     U.status:SetTextColor(unpack(StatusColor(status)))
@@ -710,6 +923,14 @@ function U.Refresh()
     U.quickScale:SetValue(barScale * 100)
     U.quickScaleValue:SetText(string.format("%.0f%%", barScale * 100))
     U.refreshingScale = nil
+    local favoriteProfiles = F.Profiles.Favorites()
+    for index, button in ipairs(U.favoriteSlots) do
+        local favorite = favoriteProfiles[index]
+        button.label:SetText(L["Favorite " .. index] .. ": " .. (favorite and Plain(favorite.name) or L["No favorite"]))
+        button.tooltipTitle = favorite and Plain(favorite.name) or L["No favorite"]
+        button.tooltipText = favorite and L["Click to view this profile. Selecting it does not apply it."]
+            or L["Select a profile and click Favorite to add it to favorites."]
+    end
     U.SetNotice(U.noticeMessage or L["Changes made in the game options do not overwrite your saved profiles."], U.noticeError)
 end
 
@@ -732,7 +953,7 @@ local function CreateQuickBar()
     bar:SetClampedToScreen(true)
     bar:EnableMouse(true)
     bar:RegisterForDrag("LeftButton")
-    Fill(bar, color.background)
+    Skin(bar, color.background)
     Position(bar, "quickBarPosition", "TOP", "TOP", 0, -125)
     local function StartDrag()
         local db = DB()
@@ -861,7 +1082,8 @@ function U.RefreshQuickBar()
             button.tooltipText = F.busy and L["Applying settings..."] or L["Click to apply this profile."]
             Enabled(button, not F.busy)
             local status = Status(profile.id)
-            button.label:SetTextColor(unpack(status == L["Active"] and color.accent or color.text))
+            button.selected = status == L["Active"]
+            PaintButton(button)
         end
     end
     bar.empty:SetShown(count == 0)

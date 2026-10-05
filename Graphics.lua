@@ -380,19 +380,38 @@ function G.GetSummary(snapshot)
     local function FPS(value)
         return tonumber(value) == 0 and Translate("Unlimited") or (value .. " FPS")
     end
-    Row("graphicsQuality", "Graphics quality", Quality)
-    Row("graphicsViewDistance", "View distance", Quality)
-    Row("graphicsShadowQuality", "Shadows", Choice({"Low", "Fair", "Medium", "High", "Ultra", "Ultra high"}))
-    Row("graphicsTextureResolution", "Textures", Choice({"Low", "Medium", "High", "Ultra"}))
-    Row("graphicsSpellDensity", "Spell density", Choice({"Essential", "Reduced", "All"}))
+    -- Keep the two native modes symmetrical. The UI can filter one mode plus
+    -- common rows without inventing missing settings or duplicating FPS limits.
+    local modeRows = {
+        {"ViewDistance", "View distance", Quality},
+        {"EnvironmentDetail", "Environment detail", Quality},
+        {"GroundClutter", "Ground clutter", Quality},
+        {"ShadowQuality", "Shadows", Choice({"Low", "Fair", "Medium", "High", "Ultra", "Ultra high"})},
+        {"LiquidDetail", "Liquids", Choice({"Low", "Fair", "Medium", "High"})},
+        {"ParticleDensity", "Particles", Choice({"Disabled", "Low", "Fair", "Medium", "High", "Ultra"})},
+        {"SSAO", "Ambient occlusion", Choice({"Disabled", "Low", "Medium", "High", "Ultra"})},
+        {"DepthEffects", "Depth effects", Choice({"Disabled", "Low", "Medium", "High"})},
+        {"ComputeEffects", "Compute effects", Choice({"Disabled", "Low", "Medium", "High", "Ultra"})},
+        {"LightMode", "Secondary lighting", Choice({"Fair", "Good", "High"})},
+        {"TextureResolution", "Textures", Choice({"Low", "Medium", "High", "Ultra"})},
+        {"SpellDensity", "Spell density", Choice({"Essential", "Reduced", "All"})},
+        {"ProjectedTextures", "Projected textures", Choice({"Disabled", "Enabled"})},
+    }
+    for _, group in ipairs({"normal", "raid"}) do
+        local prefix = group == "raid" and "raidGraphics" or "graphics"
+        local qualityName = group == "raid" and "RAIDgraphicsQuality" or "graphicsQuality"
+        Row(qualityName, "Graphics quality", Quality, group)
+        for _, option in ipairs(modeRows) do
+            Row(prefix .. option[1], option[2], option[3], group)
+        end
+    end
     Row("RenderScale", "Render scale", function(value) return string.format("%.0f%%", tonumber(value) * 100) end)
     Row("maxFPS", "Foreground FPS", function(value)
-        return values.useMaxFPS == "0" and Translate("Unlimited") or FPS(value)
+        return tonumber(values.useMaxFPS) == 0 and Translate("Unlimited") or FPS(value)
     end)
     Row("maxFPSBk", "Background FPS", function(value)
-        return values.useMaxFPSBk == "0" and Translate("Unlimited") or FPS(value)
+        return tonumber(values.useMaxFPSBk) == 0 and Translate("Unlimited") or FPS(value)
     end)
     Row("RAIDsettingsEnabled", "Raid settings", Choice({"Disabled", "Enabled"}))
-    Row("RAIDgraphicsQuality", "Raid graphics quality", Quality)
     return summary
 end

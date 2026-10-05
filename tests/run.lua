@@ -50,6 +50,29 @@ end
 reset()
 local function snapshot(t) return {values = t} end
 
+test("Interface messages and binding labels stay English on a French client", function()
+    GetLocale = function() return "frFR" end
+    equal(F.L["Apply profile"], "Apply profile")
+    equal(F.L["Lock favorite bar"], "Lock favorite bar")
+    equal(F.Format("Saved profile: %s.", "Été"), "Saved profile: Été.")
+    equal(BINDING_NAME_FOREVERPROFILES_TOGGLE, "Open profiles")
+    GetLocale = function() return "enUS" end
+end)
+test("Graphics summaries preserve both modes and their shared options", function()
+    local summary = G.GetSummary(snapshot({graphicsQuality = "8", RAIDgraphicsQuality = "3",
+        graphicsShadowQuality = "5", raidGraphicsShadowQuality = "2", RenderScale = "1"}))
+    local normal, raid, common = {}, {}, {}
+    for _, row in ipairs(summary) do
+        local group = row.group == "normal" and normal or row.group == "raid" and raid or common
+        group[row.label] = row.value
+    end
+    equal(normal["Graphics quality"], "9 / 10")
+    equal(raid["Graphics quality"], "4 / 10")
+    equal(normal.Shadows, "Ultra high")
+    equal(raid.Shadows, "Medium")
+    equal(common["Render scale"], "100%")
+end)
+
 test("Capture both graphics modes and shared settings", function()
     local capture = assert(G.Capture())
     equal(capture.values.graphicsQuality, "8")

@@ -120,26 +120,56 @@ assert(not U.apply:IsEnabled())
 U.create:Click(); assert(U.modal:IsShown())
 U.modal.edit:SetText(""); U.modal.accept:Click()
 assert(U.modal:IsShown() and U.modal.error:GetText() ~= "")
-U.modal.edit:SetText("Haute qualité"); U.modal.accept:Click()
+U.modal.edit:SetText("High quality"); U.modal.accept:Click()
 assert(not U.modal:IsShown() and #F.Profiles.List() == 1)
 assert(U.apply:IsEnabled())
 local first = F.Profiles.List()[1]
 U.favorite:Click()
 assert(#F.Profiles.Favorites() == 1)
+U.SelectTab("favorites")
+assert(U.barPanel:IsShown() and not U.profilePanel:IsShown())
 U.quickCheck:Click(); assert(U.quickBar and U.quickBar:IsShown())
-U.rename:Click(); U.modal.edit:SetText("Qualité élevée"); U.modal.accept:Click()
-assert(F.Profiles.Get(first.id).name == "Qualité élevée")
-U.duplicate:Click(); U.modal.edit:SetText("Performance"); U.modal.accept:Click()
+U.SelectTab("profiles")
+assert(U.profilePanel:IsShown() and not U.barPanel:IsShown())
+U.menuButton:Click(); assert(U.menu:IsShown())
+U.rename:Click(); U.modal.edit:SetText("Ultra quality"); U.modal.accept:Click()
+assert(F.Profiles.Get(first.id).name == "Ultra quality")
+U.menuButton:Click(); U.duplicate:Click(); U.modal.edit:SetText("Performance"); U.modal.accept:Click()
 assert(#F.Profiles.List() == 2)
 local second = F.Profiles.List()[2]
 F.Profiles.SetSelected(second.id)
 U.Refresh()
-U.delete:Click(); U.modal.cancel:Click()
+U.menuButton:Click(); U.delete:Click(); U.modal.cancel:Click()
 assert(#F.Profiles.List() == 2)
 U.update:Click(); U.modal.cancel:Click()
 assert(not U.modal:IsShown())
 F.Profiles.SetSelected(first.id)
 U.Refresh()
+-- A dialog targets the profile selected when it opened, even if selection changes.
+U.menuButton:Click(); U.rename:Click()
+F.Profiles.SetSelected(second.id); U.Refresh()
+U.modal.edit:SetText("High quality"); U.modal.accept:Click()
+assert(F.Profiles.Get(first.id).name == "High quality")
+assert(F.Profiles.Get(second.id).name == "Performance")
+U.menuButton:Click(); assert(U.menu:IsShown())
+U.menuBlocker.scripts.OnMouseDown(U.menuBlocker)
+assert(not U.menu:IsShown())
+U.menuButton:Click(); U.SelectTab("favorites")
+assert(not U.menu:IsShown())
+U.favoriteSlots[1]:Click()
+assert(U.profilePanel:IsShown() and F.Profiles.GetDB().lastSelectedID == first.id)
+U.SetSummaryMode("raid")
+local raidQuality
+for _, row in ipairs(U.summaryRows) do
+    if row:IsShown() and row.label:GetText() == "Graphics quality" then raidQuality = row.value:GetText() end
+end
+assert(raidQuality == "5 / 10", "Raid tab must show the saved raid quality")
+U.SetSummaryMode("normal")
+local normalQuality
+for _, row in ipairs(U.summaryRows) do
+    if row:IsShown() and row.label:GetText() == "Graphics quality" then normalQuality = row.value:GetText() end
+end
+assert(normalQuality == "9 / 10", "General tab must show the saved general quality")
 F.busy = true; U.Refresh()
 assert(not U.apply:IsEnabled() and not U.quickBar.buttons[1]:IsEnabled())
 F.busy = nil; U.Refresh()
@@ -155,11 +185,11 @@ U.Refresh()
 assert(U.summaryRows[1].label:GetText() == "Settings that differ")
 C_CVar.GetCVar = oldGet; F.results[first.id] = nil
 GetLocale = function() return "frFR" end
--- Recreate widgets so labels set during construction also use French.
-U.window = nil; U.quickBar = nil; U.modal = nil
+-- Construction and runtime messages must remain English even on a French client.
+U.window = nil; U.quickBar = nil; U.modal = nil; U.menu = nil; U.menuBlocker = nil
 U.Show(); F.SetQuickBarVisible(true)
-assert(U.create.label:GetText() == "Enregistrer les réglages")
-assert(F.L["Apply profile"] == "Appliquer le profil")
+assert(U.create.label:GetText() == "Save current settings")
+assert(F.L["Apply profile"] == "Apply profile")
 U.Toggle(); assert(not U.window:IsShown())
 U.Toggle(); assert(U.window:IsShown())
 U.create:Click(); U.modal.cancel:Click()
@@ -174,6 +204,7 @@ assert(not bar.moving and not U.window:IsShown(), "Dragging the bar must not ope
 assert(F.Profiles.GetDB().ui.quickBarPosition.x == 120)
 assert(F.Profiles.GetDB().ui.quickBarPosition.y == -75)
 bar.handle:Click(); assert(U.window:IsShown(), "FP must still open the window")
+U.SelectTab("favorites")
 U.quickScale:SetValue(160)
 assert(F.Profiles.GetDB().ui.quickBarScale == 1.6 and bar:GetScale() == 1.6)
 assert(U.quickScaleValue:GetText() == "160%")
@@ -255,5 +286,6 @@ assert(not F.Profiles.GetDB().ui.quickBarLocked and bar.grip:IsShown() and bar.m
 bar.scripts.OnDragStart(bar); assert(bar.moving)
 bar.scripts.OnDragStop(bar); assert(not bar.moving)
 U.SetNotice(F.L["Changes made in the game options do not overwrite your saved profiles."], false)
-print("PASS UI lifecycle, profiles, localization, movement, independent dimensions, screen fitting, sizing and persistent locking")
+U.SelectTab("profiles")
+print("PASS native-style panels, menus, modes, dialog targets, English labels, dimensions, favorites and persistent locking")
 ForeverProfilesMockUI = {widgets = widgets, named = named, F = F}

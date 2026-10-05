@@ -7,7 +7,7 @@ local function Refresh()
 end
 
 function F.Notify(message, isError)
-    local prefix = isError and "|cffffb38aForever Profiles|r: " or "|cff91c6eeForever Profiles|r: "
+    local prefix = isError and "|cffffb38aForever Profiles|r: " or "|cffd7b46bForever Profiles|r: "
     print(prefix .. message)
     if F.UI then F.UI.SetNotice(message, isError); Refresh() end
 end
@@ -265,7 +265,7 @@ local function Slash(text)
     elseif command == "quick" then F.SetQuickBarVisible(not P.GetDB().ui.quickBarVisible)
     elseif command == "list" then
         for _, profile in ipairs(P.List()) do
-            print("|cff91c6eeFP|r: " .. profile.name .. " (" .. F.GetProfileStatus(profile.id) .. ")")
+            print("|cffd7b46bFP|r: " .. profile.name .. " (" .. F.GetProfileStatus(profile.id) .. ")")
         end
         if #P.List() == 0 then F.Notify(L["No profiles yet"]) end
     elseif command == "diagnostics" then

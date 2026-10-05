@@ -10,23 +10,24 @@ Copy this repository's contents into `Interface/AddOns/ForeverProfiles` in your 
 2. Open `/fp`, click **Save current settings**, and name the profile "High quality".
 3. Configure and apply your performance settings in the game, then save a second profile.
 4. Select the profile you want and click **Apply profile**.
-5. Add up to three favorites and enable **Show favorite quick bar** to switch with one click.
+5. Add up to three favorites with the **Favorite** button. Open the **Favorite bar** tab and enable **Show favorite quick bar** to switch with one click.
 
 Selecting a profile lets you inspect it. Only applying a profile changes your game settings. Creating or duplicating a profile captures or copies settings without applying them. Profiles are not automatically applied at login.
 
 ## Features
 
+- A WoW-style window with charcoal surfaces, metallic edges, gold headings, beveled buttons, and a red **Apply profile** action. **Profiles** and **Favorite bar** tabs keep profile management separate from bar preferences.
 - Up to **40 profiles**, with renaming, duplication, updating, and deletion. Updating or deleting a profile requires confirmation.
 - General graphics settings, separate raid/battleground settings, and the native raid settings toggle saved together, when exposed by the client.
 - Render scale, antialiasing, vertical sync, and FPS limits supported by the client.
 - A movable bar with **3 favorites**: drag its handle or background to move it. The **FP** button opens the main window.
-- A **Lock favorite bar** checkbox in `/fp`: fixes the bar's position and hides its drag handle while keeping its buttons usable. Uncheck it to move the bar again. The lock setting is saved between sessions.
+- A **Lock favorite bar** checkbox in `/fp` → **Favorite bar**: fixes the bar's position and hides its drag handle while keeping its buttons usable. Uncheck it to move the bar again. The lock setting is saved between sessions.
 - Bar scale adjustable from **60 to 180%** in the main window or with the mouse wheel over its handle. Buttons and text scale together. Position and scale are saved between sessions.
 - **Independent width and height** in `/fp`: width from 160 to 1,000 and height from 28 to 120. Buttons share the available space without stretching the text. Dimensions are set before the overall bar scale and saved between sessions. **Auto width** restores sizing based on the number of favorites. On small screens, each dimension is constrained separately to the available space.
 - **Restore previous settings** returns to the configuration captured before the last switch. This temporary backup lasts for the current session; `/reload` or restarting the game clears it.
 - **Active**, **Modified**, and **Applied partially** statuses based on current values. After a partial application, the profile shows settings that differ, with their reasons in tooltips.
 - A movable window that adapts to small screens and closes with Escape.
-- French on `frFR` clients; English on other clients.
+- The interface, dialogs, tooltips, shortcut labels, and messages stay **in English on every client locale**. Existing profile names are preserved as entered.
 - Configurable shortcuts under **Options → Key Bindings → Forever Profiles** for the window, three favorites, and restoration. An entry is also available under **Options → AddOns**.
 
 ## Commands
@@ -53,7 +54,7 @@ Changes in combat are attempted through the standard APIs, and client refusals a
 
 ## Development and testing
 
-- `Init.lua`: version, translations, and shortcut labels.
+- `Init.lua`: version, English text helpers, and shortcut labels.
 - `Graphics.lua`: settings catalog, capture, validation, application, comparison, and summary.
 - `Profiles.lua`: versioned storage and profile operations.
 - `UI.lua`: window, dialogs, and favorites bar.
