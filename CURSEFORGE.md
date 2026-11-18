@@ -1,21 +1,17 @@
-<p align="center">
-  <img src="https://raw.githubusercontent.com/jBeyondstars/ForeverProfile/main/Media/Logo-Wordmark-Dark.png" alt="ForeverProfiles" width="900">
-</p>
-
-# ForeverProfiles
+![ForeverProfiles](https://raw.githubusercontent.com/jBeyondstars/ForeverProfile/main/Media/Logo-Wordmark-Dark.png)
 
 **Tired of FPS drops in busy cities or crowded areas?**
 
-Save custom graphics profiles for **WoW Forever** and switch between them with one-click favorites or keyboard shortcuts.
+Save custom graphics profiles for **WoW Forever** and switch between them in one click, with keyboard shortcuts, or automatically when your FPS changes.
 
 ## Features
 
 - Save and manage up to **40 graphics profiles**.
-- Capture general and separate raid settings, including supported render scale and FPS options.
-- Switch quickly using a **3-profile favorites bar**.
-- Move or lock the bar and adjust its width, height, and scale independently.
-- Restore the settings used before your last switch during the current session.
-- WoW-style interface, entirely in English.
+- Capture general and separate raid settings, including supported render scale, FPS limits, ground clutter fade, and sharpening options.
+- Open **Saved settings** to see every graphics setting captured in a profile, including its exact value.
+- Switch quickly using a **3-profile favorites bar**. Move or lock it and adjust its width, height, and scale independently.
+- Share configurations using **Import** and **Export**.
+- Restore the settings used before your last switch during the current session. The restore point resets when you reload the UI or restart the game.
 
 ## Getting started
 
@@ -25,18 +21,26 @@ Save custom graphics profiles for **WoW Forever** and switch between them with o
 
 Create your own setups for exploration, busy areas, or multitasking. Saved profiles are shared across your characters on the same account and installation.
 
-The temporary restore point is cleared by `/reload` or restarting the game.
+## Automatic profile switching
+
+Open **Automation** and enable automatic profile activation. Use **FPS drop** to select a performance profile, then optionally use **FPS recovery** to select the profile you want to return to. Each rule has its own FPS threshold and duration.
+
+For example, apply **Medium** after 5 consecutive seconds below 80 FPS. While **Medium** is active, return to **Ultra High** after 15 consecutive seconds above 100 FPS.
 
 ## Screenshots
 
 **Manage your profiles**
 
-![Graphics profile manager](https://raw.githubusercontent.com/jBeyondstars/ForeverProfile/main/Media/Screenshots/Profiles.png)
+![Graphics profile manager with General, Raid and Saved settings views](https://raw.githubusercontent.com/jBeyondstars/ForeverProfile/main/Media/Screenshots/Profiles.png?v=0.3.0)
+
+**Configure automatic profile switching**
+
+![Automation panel showing the FPS drop and recovery tabs](https://raw.githubusercontent.com/jBeyondstars/ForeverProfile/main/Media/Screenshots/Automation.png?v=0.3.0)
 
 **Switch with one click**
 
-![Favorites quick bar](https://raw.githubusercontent.com/jBeyondstars/ForeverProfile/main/Media/Screenshots/Favorites-Bar.png)
+![Favorites quick bar with Ultra High and Medium profiles](https://raw.githubusercontent.com/jBeyondstars/ForeverProfile/main/Media/Screenshots/Favorites-Bar.png?v=0.3.0)
 
 **Customize the favorites bar**
 
-![Favorites bar width, height, scale, and locking settings](https://raw.githubusercontent.com/jBeyondstars/ForeverProfile/main/Media/Screenshots/Favorites-Settings.png)
+![Favorites bar width, height, scale, and locking settings](https://raw.githubusercontent.com/jBeyondstars/ForeverProfile/main/Media/Screenshots/Favorites-Settings.png?v=0.3.0)
