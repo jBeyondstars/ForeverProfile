@@ -10,7 +10,7 @@ import zipfile
 from PIL import Image
 
 repository = Path(__file__).resolve().parents[1]
-version = '0.2.1'
+version = '0.3.0'
 
 
 def git(*arguments):

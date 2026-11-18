@@ -447,6 +447,39 @@ test("Secret event arguments are ignored before any comparison", function()
     F.events.scripts.OnEvent(F.events, "CVAR_UPDATE", uncomparable)
     issecretvalue = oldIsSecret
 end)
+test("FPS recovery requires a continuous interval with the drop profile active", function()
+    start(nil)
+    F.ResetAutomationState()
+    local high = assert(F.CreateProfile("High"))
+    values.renderscale = "0.75"
+    local medium = assert(F.CreateProfile("Medium"))
+    values.renderscale = "1"
+    assert(F.ConfigureAutomation({
+        enabled = true, profileID = medium.id, fpsThreshold = 80, duration = 2,
+        recoveryProfileID = high.id, recoveryThreshold = 100, recoveryDuration = 3,
+    }))
+
+    assert(not F.EvaluateAutomation(3, 101))
+    equal(values.renderscale, "1")
+    assert(F.EvaluateAutomation(2, 79))
+    flush()
+    equal(values.renderscale, "0.75")
+    assert(not F.EvaluateAutomation(2, 101))
+    equal(F.GetAutomation().recoveryElapsed, 2)
+    assert(not F.EvaluateAutomation(1, 100))
+    equal(F.GetAutomation().recoveryElapsed, 0)
+    assert(not F.EvaluateAutomation(2, 101))
+    assert(F.EvaluateAutomation(1, 101))
+    flush()
+    equal(values.renderscale, "1")
+
+    start(ForeverProfilesDB)
+    equal(F.GetAutomation().recoveryProfileID, high.id)
+    equal(F.GetAutomation().recoveryDuration, 3)
+    assert(F.DeleteProfile(high.id))
+    equal(F.GetAutomation().recoveryProfileID, nil)
+    equal(F.GetAutomation().profileID, medium.id)
+end)
 print(string.format("%d behavior tests passed.", passed))
 ForeverProfilesTestContext = {F = F, reset = reset, flush = flush, start = start}
 

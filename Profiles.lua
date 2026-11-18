@@ -7,13 +7,31 @@ local MAX_PROFILES = 40
 local MAX_FAVORITES = 3
 local MAX_ID = 1000000000
 local MAX_SCAN = 200
+local MIN_FPS_THRESHOLD = 10
+local MAX_FPS_THRESHOLD = 360
+local DEFAULT_FPS_THRESHOLD = 80
+local DEFAULT_RECOVERY_THRESHOLD = 100
+local MIN_DURATION = 1
+local MAX_DURATION = 120
+local DEFAULT_DURATION = 5
+local DEFAULT_RECOVERY_DURATION = 15
+local CRITERIA = { fps = true }
 local db
 
 local function L(message)
     return F.L and F.L[message] or message
 end
 
+local function IsSecret(value)
+    if type(issecretvalue) == "function" then
+        local ok, secret = pcall(issecretvalue, value)
+        return not ok or secret
+    end
+    return false
+end
+
 local function IsFinite(value)
+    if IsSecret(value) then return false end
     return type(value) == "number" and value == value and value ~= math.huge and value ~= -math.huge
 end
 
@@ -32,6 +50,7 @@ end
 -- SavedVariables should be plain data. Bound recursive copies so corrupt data
 -- cannot create unbounded allocations or carry executable values into profiles.
 local function CopyData(value, state, depth)
+    if IsSecret(value) then return nil, false end
     state = state or { count = 0, seen = {} }
     depth = depth or 0
     local kind = type(value)
@@ -50,6 +69,7 @@ local function CopyData(value, state, depth)
     state.seen[value] = true
     local result = {}
     for key, item in pairs(value) do
+        if IsSecret(key) or IsSecret(item) then return nil, false end
         state.count = state.count + 1
         if state.count > (state.limit or 2048) then return nil, false end
         local keyKind = type(key)
@@ -203,6 +223,40 @@ local function SanitizeProfile(id, raw)
     if complete then return profile end
 end
 
+local function AutomationNumber(value, fallback, minimum, maximum)
+    if not IsFinite(value) then return fallback end
+    return math.floor(math.max(minimum, math.min(maximum, value)) + 0.5)
+end
+
+local function SanitizeAutomation(raw, profiles)
+    local result = {
+        enabled = false,
+        criterion = "fps",
+        fpsThreshold = DEFAULT_FPS_THRESHOLD,
+        duration = DEFAULT_DURATION,
+        recoveryThreshold = DEFAULT_RECOVERY_THRESHOLD,
+        recoveryDuration = DEFAULT_RECOVERY_DURATION,
+    }
+    if IsSecret(raw) or type(raw) ~= "table" then return result end
+    if not IsSecret(raw.enabled) then
+        result.enabled = raw.enabled == true
+    end
+    if not IsSecret(raw.criterion) and type(raw.criterion) == "string" and CRITERIA[raw.criterion] then
+        result.criterion = raw.criterion
+    end
+    result.fpsThreshold = AutomationNumber(raw.fpsThreshold, result.fpsThreshold, MIN_FPS_THRESHOLD, MAX_FPS_THRESHOLD)
+    result.duration = AutomationNumber(raw.duration, result.duration, MIN_DURATION, MAX_DURATION)
+    result.recoveryThreshold = AutomationNumber(raw.recoveryThreshold, result.recoveryThreshold, MIN_FPS_THRESHOLD, MAX_FPS_THRESHOLD)
+    result.recoveryDuration = AutomationNumber(raw.recoveryDuration, result.recoveryDuration, MIN_DURATION, MAX_DURATION)
+    for _, field in ipairs({"profileID", "recoveryProfileID"}) do
+        local id = raw[field]
+        if not IsSecret(id) and type(id) == "string" and profiles and profiles[id] then
+            result[field] = id
+        end
+    end
+    return result
+end
+
 function P.Initialize(saved)
     if type(saved) == "table" and saved.schemaVersion ~= nil and saved.schemaVersion ~= 1 then
         db = nil
@@ -214,7 +268,9 @@ function P.Initialize(saved)
 
     local result = {
         schemaVersion = 1, nextID = 1, profiles = {}, order = {}, favorites = {},
-        ui = { quickBarVisible = false, quickBarScale = 1, quickBarLocked = false, quickBarHeight = 44 }, lastSelectedID = nil,
+        ui = { quickBarVisible = false, quickBarScale = 1, quickBarLocked = false, quickBarHeight = 44 },
+        automation = SanitizeAutomation(nil),
+        lastSelectedID = nil,
     }
     if type(saved) ~= "table" then db = result; return result end
 
@@ -278,6 +334,7 @@ function P.Initialize(saved)
         result.ui.windowPosition = SanitizePosition(saved.ui.windowPosition)
         result.ui.quickBarPosition = SanitizePosition(saved.ui.quickBarPosition)
     end
+    result.automation = SanitizeAutomation(saved.automation, result.profiles)
     db = result
     return result
 end
@@ -383,6 +440,10 @@ function P.Delete(id)
     for index = #db.favorites, 1, -1 do
         if db.favorites[index] == id then table.remove(db.favorites, index) end
     end
+    if db.automation then
+        if db.automation.profileID == id then db.automation.profileID = nil end
+        if db.automation.recoveryProfileID == id then db.automation.recoveryProfileID = nil end
+    end
     if db.lastSelectedID == id then db.lastSelectedID = db.order[1] end
     return true
 end
@@ -430,6 +491,67 @@ function P.GetDB()
     return db
 end
 
+function P.GetAutomation()
+    local ready, err = RequireDB()
+    if not ready then return nil, err end
+    db.automation = SanitizeAutomation(db.automation, db.profiles)
+    local copy = CopyData(db.automation)
+    return copy
+end
+
+function P.SetAutomation(changes)
+    local ready, err = RequireDB()
+    if not ready then return nil, err end
+    if IsSecret(changes) or type(changes) ~= "table" then return nil, L("Invalid automation settings.") end
+    db.automation = SanitizeAutomation(db.automation, db.profiles)
+    local candidate = CopyData(db.automation)
+    if changes.enabled ~= nil then
+        if IsSecret(changes.enabled) or type(changes.enabled) ~= "boolean" then
+            return nil, L("Invalid automation settings.")
+        end
+        candidate.enabled = changes.enabled
+    end
+    if changes.criterion ~= nil then
+        if IsSecret(changes.criterion) or type(changes.criterion) ~= "string" or not CRITERIA[changes.criterion] then
+            return nil, L("Unsupported automation criterion.")
+        end
+        candidate.criterion = changes.criterion
+    end
+    for _, field in ipairs({"fpsThreshold", "recoveryThreshold"}) do
+        if changes[field] ~= nil then
+            if not IsFinite(changes[field]) then return nil, L("FPS threshold must be a number between 10 and 360.") end
+            candidate[field] = AutomationNumber(changes[field], nil, MIN_FPS_THRESHOLD, MAX_FPS_THRESHOLD)
+        end
+    end
+    for _, field in ipairs({"duration", "recoveryDuration"}) do
+        if changes[field] ~= nil then
+            if not IsFinite(changes[field]) then return nil, L("Duration must be a number between 1 and 120 seconds.") end
+            candidate[field] = AutomationNumber(changes[field], nil, MIN_DURATION, MAX_DURATION)
+        end
+    end
+    if IsSecret(changes.clearProfile) then
+        return nil, L("Invalid automation settings.")
+    end
+    for _, field in ipairs({"profileID", "recoveryProfileID"}) do
+        local id = changes[field]
+        if field == "profileID" and changes.clearProfile then id = false end
+        if id ~= nil then
+            if IsSecret(id) then
+                return nil, L("Profile not found.")
+            elseif id == false or id == "" then
+                candidate[field] = nil
+            elseif type(id) == "string" and db.profiles[id] then
+                candidate[field] = id
+            else
+                return nil, L("Profile not found.")
+            end
+        end
+    end
+    db.automation = candidate
+    local copy = CopyData(db.automation)
+    return copy
+end
+
 function P.SetSelected(id)
     local ready, err = RequireDB()
     if not ready then return nil, err end
@@ -442,5 +564,91 @@ function P.SetSelected(id)
     return true
 end
 
+local function EscapeField(text)
+    return (string.gsub(tostring(text or ""), "([%%:;=%c])", function(char)
+        return string.format("%%%02X", string.byte(char))
+    end))
+end
+
+local function UnescapeField(text)
+    if type(text) ~= "string" then return nil end
+    local stripped = string.gsub(text, "%%%x%x", "")
+    if string.find(stripped, "%", 1, true) then return nil end
+    local valid = true
+    local decoded = string.gsub(text, "%%(%x%x)", function(hex)
+        local byte = tonumber(hex, 16)
+        if not byte or byte == 0 then valid = false; return "" end
+        return string.char(byte)
+    end)
+    if not valid then return nil end
+    return decoded
+end
+
+function P.Export(id)
+    local profile, err = FindProfile(id)
+    if not profile then return nil, err end
+    local values = profile.modules and profile.modules.graphics and profile.modules.graphics.values
+    if type(values) ~= "table" then return nil, L("Invalid graphics snapshot.") end
+    local keys = {}
+    for key in pairs(values) do keys[#keys + 1] = key end
+    table.sort(keys)
+    local parts = {}
+    for _, key in ipairs(keys) do
+        parts[#parts + 1] = EscapeField(key) .. "=" .. EscapeField(values[key])
+    end
+    return "FP1:" .. EscapeField(profile.name) .. ":" .. table.concat(parts, ";")
+end
+
+function P.Import(payload, customName)
+    local ready, err = RequireDB()
+    if not ready then return nil, err end
+    if type(payload) ~= "string" then return nil, L("Invalid import string.") end
+    payload = string.gsub(string.gsub(payload, "^%s+", ""), "%s+$", "")
+    if payload == "" then return nil, L("Paste an export string to import.") end
+    if #payload > 16384 then return nil, L("Profile data is too large or invalid.") end
+    local encodedName, body = string.match(payload, "^FP1:([^:]+):(.+)$")
+    if not encodedName or not body then return nil, L("Invalid import string.") end
+    if string.find(body, "^;") or string.find(body, ";$") or string.find(body, ";;", 1, true) then
+        return nil, L("Invalid import string.")
+    end
+    local decodedName = UnescapeField(encodedName)
+    if not decodedName then return nil, L("Invalid import string.") end
+    local rawName = customName and customName ~= "" and customName or decodedName
+    local baseName, nameErr = NormalizeName(rawName)
+    if not baseName then return nil, nameErr end
+    local values, count = {}, 0
+    for token in string.gmatch(body, "([^;]+)") do
+        count = count + 1
+        if count > 512 then return nil, L("Profile data is too large or invalid.") end
+        local rawKey, rawVal = string.match(token, "^([^=]+)=([^=]+)$")
+        local key = UnescapeField(rawKey)
+        local val = UnescapeField(rawVal)
+        if not key or not val or values[key] ~= nil then return nil, L("Invalid import string.") end
+        values[key] = val
+    end
+
+    local snapshot, snapErr = ValidateSnapshot({ values = values })
+    if not snapshot then return nil, snapErr end
+    local finalName = baseName
+    if HasName(finalName) then
+        for number = 2, MAX_PROFILES + 2 do
+            local suffix = " (" .. tostring(number) .. ")"
+            local candidate = ShortName(baseName, 48 - #suffix, 100 - #suffix) .. suffix
+            if not HasName(candidate) then finalName = candidate; break end
+        end
+    end
+    if HasName(finalName) then return nil, L("That profile name already exists.") end
+    return AddProfile(finalName, { graphics = snapshot })
+end
+
 P.MAX_PROFILES = MAX_PROFILES
 P.MAX_FAVORITES = MAX_FAVORITES
+P.MIN_FPS_THRESHOLD = MIN_FPS_THRESHOLD
+P.MAX_FPS_THRESHOLD = MAX_FPS_THRESHOLD
+P.DEFAULT_FPS_THRESHOLD = DEFAULT_FPS_THRESHOLD
+P.MIN_DURATION = MIN_DURATION
+P.MAX_DURATION = MAX_DURATION
+P.DEFAULT_DURATION = DEFAULT_DURATION
+P.DEFAULT_RECOVERY_THRESHOLD = DEFAULT_RECOVERY_THRESHOLD
+P.DEFAULT_RECOVERY_DURATION = DEFAULT_RECOVERY_DURATION
+P.CRITERIA = CRITERIA

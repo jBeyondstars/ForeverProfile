@@ -170,6 +170,17 @@ for _, row in ipairs(U.summaryRows) do
     if row:IsShown() and row.label:GetText() == "Graphics quality" then normalQuality = row.value:GetText() end
 end
 assert(normalQuality == "9 / 10", "General tab must show the saved general quality")
+U.summaryTabs.saved:Click()
+local savedQuality, savedRaidQuality
+for _, row in ipairs(U.summaryRows) do
+    if row:IsShown() then
+        local name = row.label:GetText()
+        if name == "graphicsQuality" then savedQuality = row.value:GetText() end
+        if name == "RAIDgraphicsQuality" then savedRaidQuality = row.value:GetText() end
+    end
+end
+assert(savedQuality == "8" and savedRaidQuality == "4", "Saved settings must show exact game values")
+U.SetSummaryMode("normal")
 F.busy = true; U.Refresh()
 assert(not U.apply:IsEnabled() and not U.quickBar.buttons[1]:IsEnabled())
 F.busy = nil; U.Refresh()

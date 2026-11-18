@@ -76,6 +76,7 @@ local derived = {
     {"lodObjectFadeScale", "Object fade distance", 0, 5000, false},
     {"groundEffectDensity", "Ground clutter density", 0, 256, true},
     {"groundEffectDist", "Ground clutter distance", 0, 600, false},
+    {"groundEffectFade", "Ground clutter fade distance", 0, 600, false},
     {"groundEffectAnimation", "Ground clutter animation", 0, 1, true},
     {"shadowMode", "Shadow mode", 0, 4, true},
     -- Cascade counts and shadow texture allocations are deliberately left to
@@ -115,11 +116,13 @@ for _, group in ipairs({"normal", "raid"}) do
 end
 
 Add("spellVisualDensityFilterSetting", "Spell density", "common", 0, 4, true)
+Add("useHighResTextures", "High-resolution textures", "common", 0, 1, true)
 Add("bloomUserMult", "Bloom", "common", 0, 2, false)
 Add("bloomEnable", "Bloom enabled", "common", 0, 1, true)
 Add("RenderScale", "Render scale", "common", 0.1, 2, false)
 Add("ResampleQuality", "Resampling", "common", 0, 3, true, "cvar")
 Add("ResampleSharpness", "Resample sharpness", "common", 0, 2, false)
+Add("ResampleAlwaysSharpen", "Always sharpen", "common", 0, 1, true)
 Add("ffxAntiAliasingMode", "Image antialiasing", "common", 0, 4, true, "fxaa")
 Add("MSAAQuality", "Multisample antialiasing", "common", 0, 16, true, "msaa")
 Add("msaaAlphaTest", "Multisample alpha test", "common", 0, 1, true, "cvar")
@@ -427,4 +430,21 @@ function G.GetSummary(snapshot)
     end)
     Row("RAIDsettingsEnabled", "Raid settings", Choice({"Disabled", "Enabled"}))
     return summary
+end
+
+function G.GetSavedSettings(snapshot)
+    local settings = {}
+    if not G.Validate(snapshot) then return settings end
+    for _, group in ipairs({"normal", "raid", "common"}) do
+        for _, entry in ipairs(catalog) do
+            local value = snapshot.values[entry.name]
+            if entry.group == group and value ~= nil then
+                settings[#settings + 1] = {
+                    label = entry.name, value = value, group = group,
+                    description = Translate(entry.label),
+                }
+            end
+        end
+    end
+    return settings
 end
